@@ -166,7 +166,8 @@ export async function runBenchmark(request, {onProgress = () => {}, signal} = {}
       return await puppeteer.launch(options);
     } catch (err) {
       // Some Linux systems block Chrome's sandbox. Retry once without it and say so.
-      if (process.platform === 'linux' && !noSandbox && /sandbox/i.test(err.message)) {
+      // With a pipe connection the crash often shows only as "Target closed", not "sandbox".
+      if (process.platform === 'linux' && !noSandbox && /sandbox|target closed|failed to launch/i.test(err.message)) {
         noSandbox = true;
         log('This Linux system blocks the Chrome sandbox, so the test browser runs without it.', 'warn');
         return launch(profileDir);

@@ -5,6 +5,7 @@
 * Renamed to Chrome Extensions Impact Analyser and published at https://github.com/PalWorks/chrome-extensions-impact-analyser
 * License holder is now PalWorks.
 * Self-test runs automatically on Windows, macOS and Linux (GitHub Actions) on every push.
+* Fix: on Linux systems that block Chrome's sandbox (such as Ubuntu 24.04), the test browser now falls back to running without it instead of stopping with "Target closed". (2026-10-21T17:41:57+05:30)
 
 ## 0.1.0 (2026-10-21T13:14:10+05:30)
 
