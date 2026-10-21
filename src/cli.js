@@ -13,7 +13,7 @@ import {writeReport, resultFolderName} from './report.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 
-const HELP = `Chrome FireFox Browser Extensions Impact Analyser ${pkg.version}: measure how much each browser extension slows down web pages.
+const HELP = `Chrome Firefox Browser Extensions Impact Analyser ${pkg.version}: measure how much each browser extension slows down web pages.
 
 Usage:
   node src/cli.js --list

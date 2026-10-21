@@ -2,9 +2,9 @@
 
 ## Unreleased (2026-10-21T17:37:59+05:30)
 
-* Renamed to Chrome FireFox Browser Extensions Impact Analyser and published at https://github.com/PalWorks/chrome-firefox-browser-extensions-impact-analyser
+* Renamed to Chrome Firefox Browser Extensions Impact Analyser and published at https://github.com/PalWorks/chrome-firefox-browser-extensions-impact-analyser Spelling set to "Firefox" (2026-10-21T21:17:28+05:30).
 * License holder is now PalWorks.
-* Renamed to Chrome FireFox Browser Extensions Impact Analyser, now that it tests Firefox too. The repository moved to https://github.com/PalWorks/chrome-firefox-browser-extensions-impact-analyser (the old address redirects). (2026-10-21T20:55:16+05:30)
+* Renamed to Chrome Firefox Browser Extensions Impact Analyser, now that it tests Firefox too. The repository moved to https://github.com/PalWorks/chrome-firefox-browser-extensions-impact-analyser (the old address redirects). (2026-10-21T20:55:16+05:30) Spelling set to "Firefox" (2026-10-21T21:17:28+05:30).
 * Self-test runs automatically on Windows, macOS and Linux (GitHub Actions) on every push.
 * Firefox support (2026-10-21T18:54:49+05:30): Firefox profiles are found on all three systems (including Snap and Flatpak on Linux) and their add-ons are listed with names and icons. Firefox add-ons are tested in a separate copy of Firefox, downloaded once on first use. Main-thread work and page-frozen time come from a timer on the page; memory, data downloaded and whole-browser CPU are not available in Firefox. New `npm run self-test:firefox` and CLI `--firefox`.
 * Fix: on Linux systems that block Chrome's sandbox (such as Ubuntu 24.04), the test browser now falls back to running without it instead of stopping with "Target closed". (2026-10-21T17:41:57+05:30)

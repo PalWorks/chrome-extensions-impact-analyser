@@ -18,7 +18,7 @@ const fixtures = path.join(here, 'fixtures');
 const engine = process.argv.includes('--firefox') ? 'firefox' : 'chrome';
 
 const PAGE = `<!doctype html><html><head><title>Self-test page</title></head><body>
-<h1>Chrome FireFox Browser Extensions Impact Analyser self-test</h1>
+<h1>Chrome Firefox Browser Extensions Impact Analyser self-test</h1>
 ${'<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>'.repeat(200)}
 <script>let x = 0; for (let i = 0; i < 2e6; i++) x += i; document.title += ' ' + x;</script>
 </body></html>`;

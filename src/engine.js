@@ -562,7 +562,7 @@ export async function runBenchmark(request, {onProgress = () => {}, signal} = {}
     }
 
     return {
-      tool: {name: 'Chrome FireFox Browser Extensions Impact Analyser', version: request.toolVersion || ''},
+      tool: {name: 'Chrome Firefox Browser Extensions Impact Analyser', version: request.toolVersion || ''},
       startedAt: startedAt.toISOString(),
       finishedAt: new Date().toISOString(),
       engine,

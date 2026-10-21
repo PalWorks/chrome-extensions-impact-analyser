@@ -1,4 +1,4 @@
-// Chrome FireFox Browser Extensions Impact Analyser: the point-and-click front end. Plain JavaScript, no build step.
+// Chrome Firefox Browser Extensions Impact Analyser: the point-and-click front end. Plain JavaScript, no build step.
 
 const TOKEN = document.querySelector('meta[name=token]').content;
 const app = document.getElementById('app');
@@ -610,7 +610,7 @@ function renderBlocked() {
 }
 
 function renderStopped() {
-  return `<h1>Chrome FireFox Browser Extensions Impact Analyser has stopped</h1><p class="lead">You can close this tab. To use it again, run the start file.</p>`;
+  return `<h1>Chrome Firefox Browser Extensions Impact Analyser has stopped</h1><p class="lead">You can close this tab. To use it again, run the start file.</p>`;
 }
 
 function render() {
