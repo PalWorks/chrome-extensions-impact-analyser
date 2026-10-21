@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="token" content="__TOKEN__">
+<title>Chrome Extensions Impact Analyser</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="/" aria-label="Chrome Extensions Impact Analyser, start over"><img src="/icon.svg" alt="" width="28" height="28"><span>Chrome Extensions Impact Analyser</span></a>
+    <button type="button" class="link" id="past-link">Past reports</button>
+  </div>
+</header>
+<main id="app" aria-live="polite">
+  <div class="card skeleton" aria-hidden="true"></div>
+  <noscript><p>This page needs JavaScript turned on.</p></noscript>
+</main>
+<footer class="foot">
+  <span id="version"></span>
+  <button type="button" class="link" id="quit">Quit Chrome Extensions Impact Analyser</button>
+</footer>
+<script src="/app.js" type="module"></script>
+</body>
+</html>

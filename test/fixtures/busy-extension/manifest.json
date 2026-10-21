@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Self-test: busy extension",
+  "version": "1.0.0",
+  "description": "Test fixture. Burns about 300 ms of CPU on every page it runs on.",
+  "background": {"service_worker": "background.js"},
+  "permissions": ["storage"],
+  "content_scripts": [
+    {"matches": ["<all_urls>"], "js": ["content.js"], "run_at": "document_idle"}
+  ]
+}
