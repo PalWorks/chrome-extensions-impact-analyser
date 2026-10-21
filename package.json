@@ -1,5 +1,5 @@
 {
-  "name": "chrome-extensions-impact-analyser",
+  "name": "chrome-firefox-browser-extensions-impact-analyser",
   "version": "0.1.0",
   "description": "Measure how much each of your Chrome extensions slows down web pages.",
   "license": "MIT",
@@ -9,7 +9,7 @@
     "node": ">=22.12.0"
   },
   "bin": {
-    "chrome-extensions-impact-analyser": "src/cli.js"
+    "chrome-firefox-browser-extensions-impact-analyser": "src/cli.js"
   },
   "scripts": {
     "start": "node src/server.js",

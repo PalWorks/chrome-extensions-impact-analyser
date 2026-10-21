@@ -1,8 +1,8 @@
 @echo off
-rem Starts Chrome Extensions Impact Analyser on Windows. Double-click this file.
+rem Starts Chrome FireFox Browser Extensions Impact Analyser on Windows. Double-click this file.
 setlocal
 cd /d "%~dp0"
-title Chrome Extensions Impact Analyser
+title Chrome FireFox Browser Extensions Impact Analyser
 
 where node >nul 2>nul
 if errorlevel 1 goto nonode
@@ -15,7 +15,7 @@ if not exist ".cache\puppeteer\chrome" goto install
 goto run
 
 :install
-echo First run: downloading what Chrome Extensions Impact Analyser needs (about 200 MB). This happens only once.
+echo First run: downloading what Chrome FireFox Browser Extensions Impact Analyser needs (about 200 MB). This happens only once.
 call npm install --no-audit --no-fund
 if errorlevel 1 (
   echo The download failed. Check your internet connection and double-click this file again.
@@ -29,14 +29,14 @@ pause
 exit /b 0
 
 :nonode
-echo Chrome Extensions Impact Analyser needs Node.js version 22.12 or newer.
+echo Chrome FireFox Browser Extensions Impact Analyser needs Node.js version 22.12 or newer.
 echo Opening the download page. Install the LTS version, then double-click this file again.
 start "" "https://nodejs.org/"
 pause
 exit /b 1
 
 :oldnode
-echo Your Node.js is too old. Chrome Extensions Impact Analyser needs version 22.12 or newer.
+echo Your Node.js is too old. Chrome FireFox Browser Extensions Impact Analyser needs version 22.12 or newer.
 echo Opening the download page. Install the LTS version, then double-click this file again.
 start "" "https://nodejs.org/"
 pause

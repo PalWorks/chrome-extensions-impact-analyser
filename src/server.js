@@ -315,7 +315,7 @@ try {
 }
 
 const address = `http://127.0.0.1:${port}/`;
-console.log(`\nChrome Extensions Impact Analyser ${pkg.version} is running.`);
+console.log(`\nChrome FireFox Browser Extensions Impact Analyser ${pkg.version} is running.`);
 console.log(`Open this address in your browser if it did not open by itself:\n\n  ${address}\n`);
 console.log('Keep this window open while you use it. Close it, or press Ctrl+C, to stop.\n');
 if (!noOpen) openExternal(address);

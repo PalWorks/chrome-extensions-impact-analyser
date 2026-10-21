@@ -1,12 +1,12 @@
-# Chrome Extensions Impact Analyser
+# Chrome FireFox Browser Extensions Impact Analyser
 
 Find out which of your browser extensions slow down web pages.
 
-Chrome Extensions Impact Analyser copies the extensions from your Chrome (or Edge, Brave, Vivaldi, Chromium) or Firefox profile into a separate test browser. It loads the websites you pick with no extensions, with each extension on its own, and with all of them together. Then it tells you, in plain words, which extensions make pages slower, use more memory, or even make pages faster.
+Chrome FireFox Browser Extensions Impact Analyser copies the extensions from your Chrome (or Edge, Brave, Vivaldi, Chromium) or Firefox profile into a separate test browser. It loads the websites you pick with no extensions, with each extension on its own, and with all of them together. Then it tells you, in plain words, which extensions make pages slower, use more memory, or even make pages faster.
 
 Your own browser, profile and data are never changed.
 
-Last updated: 2026-10-21T18:54:49+05:30
+Last updated: 2026-10-21T20:55:16+05:30
 
 ## What you get
 
@@ -30,7 +30,7 @@ Download this repository (green **Code** button, then **Download ZIP**) and unzi
 | macOS | Double-click `start-macos.command`. The first time, macOS may block it: right-click the file, choose **Open**, then **Open** again. |
 | Linux | Open a terminal in the folder and run `./start-linux.sh`. |
 
-A terminal window opens, and then the app opens in your web browser. Keep the terminal window open while you use the app. To stop, click **Quit Chrome Extensions Impact Analyser** at the bottom of the page or close the terminal window.
+A terminal window opens, and then the app opens in your web browser. Keep the terminal window open while you use the app. To stop, click **Quit Chrome FireFox Browser Extensions Impact Analyser** at the bottom of the page or close the terminal window.
 
 ## Use it
 

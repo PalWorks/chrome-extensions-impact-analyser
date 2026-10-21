@@ -79,7 +79,7 @@ export function renderHtml(data) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Chrome Extensions Impact Analyser report, ${esc(when.toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}))}</title>
+<title>Chrome FireFox Browser Extensions Impact Analyser report, ${esc(when.toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}))}</title>
 <style>
 :root{--bg:#f7f7f5;--card:#fff;--text:#1d1d1b;--muted:#64645f;--line:#e2e2dc;--accent:#1f5fbf;
 --heavy:#b3261e;--heavy-bg:#fbe9e7;--moderate:#8a5300;--moderate-bg:#fff1d6;--light:#3d5a1e;--light-bg:#eef5e2;--none:#4a4a46;--none-bg:#ededea;--faster:#0b5c4f;--faster-bg:#ddf3ee;color-scheme:light}
@@ -115,7 +115,7 @@ a{color:var(--accent)}
 </head>
 <body>
 <main>
-<h1>Chrome Extensions Impact Analyser report</h1>
+<h1>Chrome FireFox Browser Extensions Impact Analyser report</h1>
 <div class="meta">${esc(when.toLocaleString('en-GB', {dateStyle: 'long', timeStyle: 'short'}))} · ${esc(sourceText)} · ${data.urls.length} website${data.urls.length === 1 ? '' : 's'} · ${s.rounds} rounds · ${loads} page loads</div>
 
 <div class="answer">${esc(a.headline)}</div>
