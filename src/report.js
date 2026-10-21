@@ -71,6 +71,8 @@ export function renderHtml(data) {
   const when = new Date(data.startedAt);
   const sourceText = data.source?.profileName ? `${data.source.browser || 'Browser'} profile "${data.source.profileName}"` : 'Chosen extension folders';
   const loads = data.samples.length;
+  const firefox = data.engine === 'firefox';
+  const testBrowser = env.browser || env.chrome || '';
 
   return `<!doctype html>
 <html lang="en">
@@ -128,7 +130,9 @@ a{color:var(--accent)}
 <h2>What you can do</h2>
 <ul>
 <li>Remove extensions marked <strong>Heavy</strong> or <strong>Noticeable</strong> that you rarely use.</li>
-<li>For ones you need, open the extension's details page in your browser and set <strong>Site access</strong> to <strong>On click</strong> or <strong>On specific sites</strong>. It then stops running on every page.</li>
+${firefox
+  ? `<li>For ones you need, open <strong>about:addons</strong> in Firefox, choose the add-on, open <strong>Permissions</strong> and turn off <strong>Access your data for all websites</strong>. It then runs only on sites you allow.</li>`
+  : `<li>For ones you need, open the extension's details page in your browser and set <strong>Site access</strong> to <strong>On click</strong> or <strong>On specific sites</strong>. It then stops running on every page.</li>`}
 <li>Run the test again with your own everyday websites. Impact differs from site to site.</li>
 </ul>
 
@@ -139,17 +143,20 @@ ${a.individual.map(detail).join('')}${a.combined ? detail(a.combined) : ''}
 
 <h2>How this was measured</h2>
 <ul>
-<li>Every setup (no extensions, each extension on its own${a.combined ? ', all together' : ''}) ran in its own clean copy of Chrome for Testing, never in your own browser. Extensions were copied from your profile, so they ran as if freshly installed and signed out.</li>
+<li>Every setup (no extensions, each extension on its own${a.combined ? ', all together' : ''}) ran in its own clean copy of ${firefox ? 'Firefox' : 'Chrome for Testing'}, never in your own browser. Extensions were copied from your profile, so they ran as if freshly installed and signed out.</li>
 <li>Each extension first had ${s.warmupSeconds} seconds to finish its first-run work. Each browser start then had ${s.settleSeconds} seconds to settle before measuring.</li>
 <li>Each website was loaded ${s.rounds} times per setup with an empty cache, in a fresh random order each round. Pages were watched for ${s.observeSeconds} seconds after loading.</li>
 <li>Numbers are the median of the loads, minus the median with no extensions, averaged across websites. A change counts only when it is bigger than the normal run-to-run variation (and at least 5% of the typical value).</li>
 <li>Verdicts: <em>Heavy</em> means at least ${THRESHOLDS.heavy.cpu} ms extra work or ${THRESHOLDS.heavy.slowdown / 1000} s slower. <em>Noticeable</em> means at least ${THRESHOLDS.moderate.cpu} ms or ${THRESHOLDS.moderate.slowdown} ms. <em>Small</em> means at least ${THRESHOLDS.light.cpu} ms or ${THRESHOLDS.light.slowdown} ms. <em>Makes pages faster</em> means less work and pages finishing at least ${THRESHOLDS.faster.speedup} ms sooner. <em>Main content later</em> is the change in when the largest text or image appeared.</li>
-<li><em>Extra work per page</em> is the extra time the page's main thread was busy, including the extension's scripts on the page. <em>Page frozen</em> adds up the part of every task longer than 50 ms, when the page could not respond to clicks or scrolling.</li>
-<li>Memory is the extension's own background memory plus any extra memory on the page.</li>
+${firefox
+  ? `<li><em>Extra work per page</em> is the extra time the page's main thread was busy, including the add-on's scripts on the page. Firefox does not report this directly, so a tiny timer ran on the page and every delay longer than 10 ms was counted as busy time. <em>Page frozen</em> adds up the part of every delay longer than 50 ms, when the page could not respond to clicks or scrolling.</li>
+<li>Memory, data downloaded and whole-browser CPU are not measured in Firefox, because its automation interface does not report them.</li>`
+  : `<li><em>Extra work per page</em> is the extra time the page's main thread was busy, including the extension's scripts on the page. <em>Page frozen</em> adds up the part of every task longer than 50 ms, when the page could not respond to clicks or scrolling.</li>
+<li>Memory is the extension's own background memory plus any extra memory on the page.</li>`}
 <li>Extensions that need you to sign in, or that rely on a desktop app, may do less here than in your normal browser.</li>
 </ul>
 <dl>
-<dt>Test browser</dt><dd>${esc(env.chrome)}${env.headless ? ' (no visible windows)' : ''}${env.sandbox ? '' : ' (sandbox off)'}</dd>
+<dt>Test browser</dt><dd>${esc(testBrowser)}${env.headless ? ' (no visible windows)' : ''}${env.sandbox ? '' : ' (sandbox off)'}</dd>
 <dt>Computer</dt><dd>${esc(env.platform)}, ${esc(env.cpu)} (${env.cpuCount} threads), ${env.memoryGB} GB memory</dd>
 <dt>Websites</dt><dd>${data.urls.map(esc).join('<br>')}</dd>
 <dt>Extensions</dt><dd>${data.extensions.map(e => `${esc(e.name)} ${esc(e.version)}${e.id ? ` <span class="sub">(${esc(e.id)})</span>` : ''}`).join('<br>')}</dd>

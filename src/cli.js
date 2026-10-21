@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {parseArgs} from 'node:util';
 import {fileURLToPath} from 'node:url';
-import {detectBrowsers, listExtensions, describeExtensionFolder} from './sources.js';
+import {detectBrowsers, listExtensions, describeExtensionFolder, isFirefoxProfile} from './sources.js';
 import {runBenchmark, estimateSeconds, CancelledError, DEFAULT_SETTINGS} from './engine.js';
 import {analyze} from './analyze.js';
 import {writeReport, resultFolderName} from './report.js';
@@ -21,9 +21,11 @@ Usage:
 
 Choosing what to test:
   --list                  Show the browser profiles found on this computer, then exit.
-  --profile <folder>      Profile folder to read extensions from (see "Profile Path" in chrome://version).
+  --profile <folder>      Profile folder to read extensions from ("Profile Path" in chrome://version,
+                          or "Profile Folder" in about:support for Firefox).
   --extensions <ids>      Comma-separated extension IDs to test. Default: every extension turned on in the profile.
-  --extension-dir <dir>   Also test an unpacked extension folder. Repeat for more.
+  --extension-dir <dir>   Also test an unpacked extension folder (or a Firefox .xpi). Repeat for more.
+  --firefox               Test in Firefox. Automatic when --profile is a Firefox profile.
   --url <site>            Website to load. Repeat for more. "example.com" is fine.
 
 Options:
@@ -46,6 +48,7 @@ try {
       profile: {type: 'string'},
       extensions: {type: 'string'},
       'extension-dir': {type: 'string', multiple: true},
+      firefox: {type: 'boolean'},
       url: {type: 'string', multiple: true},
       rounds: {type: 'string'},
       warmup: {type: 'string'},
@@ -70,9 +73,9 @@ if (opts.help) {
 
 if (opts.list) {
   const browsers = detectBrowsers();
-  if (browsers.length === 0) console.log('No browser profiles found. Pass --profile with the folder shown as "Profile Path" in chrome://version.');
+  if (browsers.length === 0) console.log('No browser profiles found. Pass --profile with the folder shown as "Profile Path" in chrome://version (or "Profile Folder" in about:support for Firefox).');
   for (const b of browsers) {
-    console.log(`\n${b.name}`);
+    console.log(`\n${b.name}${b.engine === 'firefox' ? ' (tested in Firefox)' : ''}`);
     for (const p of b.profiles) console.log(`  ${p.name}${p.account ? ` (${p.account})` : ''}\n    ${p.path}`);
   }
   process.exit(0);
@@ -85,9 +88,11 @@ const fail = message => {
 
 let extensions = [];
 let source = null;
+let engine = opts.firefox ? 'firefox' : 'chrome';
 if (opts.profile) {
   const profilePath = path.resolve(opts.profile);
   if (!fs.existsSync(profilePath)) fail(`Profile folder not found: ${profilePath}`);
+  if (isFirefoxProfile(profilePath)) engine = 'firefox';
   const all = listExtensions(profilePath);
   const wanted = opts.extensions ? opts.extensions.split(',').map(s => s.trim()).filter(Boolean) : null;
   if (wanted) {
@@ -98,15 +103,17 @@ if (opts.profile) {
   }
   for (const e of extensions.filter(e => !e.canTest)) console.log(`Skipping "${e.name}": ${e.note}`);
   extensions = extensions.filter(e => e.canTest);
-  source = {browser: '', profileName: path.basename(profilePath), profilePath};
+  source = {browser: engine === 'firefox' ? 'Firefox' : '', profileName: path.basename(profilePath), profilePath};
 }
 for (const dir of opts['extension-dir'] || []) {
-  const info = describeExtensionFolder(path.resolve(dir));
+  if (/\.xpi$/i.test(dir)) engine = 'firefox';
+  const info = describeExtensionFolder(path.resolve(dir), {engine});
   if (!info) fail(`No extension (manifest.json) found in ${dir}`);
   if (!info.canTest) fail(`"${info.name}" cannot be tested: ${info.note}`);
   extensions.push(info);
 }
 if (extensions.length === 0) fail('Nothing to test. Pass --profile and/or --extension-dir.');
+if (extensions.some(e => e.engine && e.engine !== engine)) fail('Chrome extensions and Firefox add-ons cannot be tested in the same run.');
 if (!opts.url?.length) fail('Pass at least one --url.');
 
 const settings = {
@@ -133,7 +140,7 @@ process.on('SIGINT', () => {
 let lastLine = 0;
 try {
   const data = await runBenchmark(
-    {urls: opts.url, extensions, settings, source, toolVersion: pkg.version},
+    {urls: opts.url, extensions, engine, settings, source, toolVersion: pkg.version},
     {
       signal: controller.signal,
       onProgress: e => {

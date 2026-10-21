@@ -22,3 +22,4 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run self-test
+      - run: npm run self-test:firefox

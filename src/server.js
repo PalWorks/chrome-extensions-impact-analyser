@@ -9,7 +9,7 @@ import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import puppeteer from 'puppeteer';
-import {detectBrowsers, listExtensions, describeExtensionFolder, resolveCustomFolder} from './sources.js';
+import {detectBrowsers, listExtensions, describeExtensionFolder, resolveCustomFolder, isExtensionSource} from './sources.js';
 import {runBenchmark, normalizeSettings, normalizeUrl, estimateSeconds, CancelledError, DEFAULT_SETTINGS, LIMITS} from './engine.js';
 import {analyze} from './analyze.js';
 import {writeReport, resultFolderName} from './report.js';
@@ -111,13 +111,14 @@ function summaryFor(id, data) {
     warnings: data.analysis.warnings,
     sites: data.urls.length,
     rounds: data.settings.rounds,
+    engine: data.engine || 'chrome',
   };
 }
 
 async function startRun(body) {
   const urls = (body.urls || []).map(normalizeUrl).filter(Boolean);
   const extensions = (body.extensions || [])
-    .filter(e => e && typeof e.path === 'string' && fs.existsSync(path.join(e.path, 'manifest.json')))
+    .filter(e => e && typeof e.path === 'string' && isExtensionSource(e.path))
     .map(e => ({id: String(e.id || ''), name: String(e.name || ''), version: String(e.version || ''), path: e.path}));
   if (extensions.length === 0) throw Object.assign(new Error('Choose at least one extension to test.'), {status: 400});
   if (urls.length === 0) throw Object.assign(new Error('Add at least one website to test.'), {status: 400});
@@ -140,7 +141,7 @@ async function startRun(body) {
   (async () => {
     try {
       const data = await runBenchmark(
-        {urls, extensions, settings: body.settings, source: body.source || null, toolVersion: pkg.version},
+        {urls, extensions, engine: body.engine === 'firefox' ? 'firefox' : 'chrome', settings: body.settings, source: body.source || null, toolVersion: pkg.version},
         {onProgress, signal: controller.signal},
       );
       data.analysis = analyze(data);
@@ -259,8 +260,10 @@ async function handle(req, res) {
       return send(res, 200, resolveCustomFolder(body.path));
     case '/api/extension-folder': {
       const dir = path.resolve(String(body.path || '').trim());
-      const info = fs.existsSync(path.join(dir, 'manifest.json')) ? describeExtensionFolder(dir, {id: ''}) : null;
-      if (!info) return send(res, 200, {error: 'No extension was found there. Pick the folder that contains manifest.json.'});
+      const engine = body.engine === 'firefox' ? 'firefox' : 'chrome';
+      if (engine === 'chrome' && /\.xpi$/i.test(dir)) return send(res, 200, {error: 'That is a Firefox add-on. Choose a Firefox profile in step 1 to test it.'});
+      const info = isExtensionSource(dir) ? describeExtensionFolder(dir, {id: '', engine}) : null;
+      if (!info) return send(res, 200, {error: engine === 'firefox' ? 'No add-on was found there. Pick the folder that contains manifest.json, or an .xpi file.' : 'No extension was found there. Pick the folder that contains manifest.json.'});
       return send(res, 200, {extension: info});
     }
     case '/api/estimate':

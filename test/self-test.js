@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // End-to-end check that the measurements work on this computer, with no internet needed.
+// Pass --firefox to check the Firefox path instead of Chrome (the first run downloads Firefox).
 // It serves a small test page locally and measures two test extensions:
 //   busy-extension burns about 300 ms of CPU on every page, so it must come out as "Heavy".
 //   idle-extension does nothing, so it must come out as "No clear impact".
@@ -14,6 +15,7 @@ import {writeReport} from '../src/report.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixtures = path.join(here, 'fixtures');
+const engine = process.argv.includes('--firefox') ? 'firefox' : 'chrome';
 
 const PAGE = `<!doctype html><html><head><title>Self-test page</title></head><body>
 <h1>Chrome Extensions Impact Analyser self-test</h1>
@@ -38,6 +40,7 @@ try {
   const data = await runBenchmark(
     {
       urls: [url],
+      engine,
       extensions: [
         {name: 'Self-test: busy extension', path: path.join(fixtures, 'busy-extension')},
         {name: 'Self-test: idle extension', path: path.join(fixtures, 'idle-extension')},
@@ -52,12 +55,12 @@ try {
     },
   );
   data.analysis = analyze(data);
-  const report = writeReport(data, path.join(os.tmpdir(), 'extension-impact-self-test'));
+  const report = writeReport(data, path.join(os.tmpdir(), `extension-impact-self-test-${engine}`));
 
   const busy = data.analysis.individual.find(r => r.label.includes('busy'));
   const idle = data.analysis.individual.find(r => r.label.includes('idle'));
   const extra = busy?.headline.mainThreadMs.value ?? 0;
-  console.log('');
+  console.log(`\nTest browser: ${data.environment.browser}`);
   expect(data.samples.every(s => s.ok), `all ${data.samples.length} page loads succeeded`);
   expect(busy?.verdict === 'heavy', `busy extension verdict is "Heavy impact" (got "${busy?.verdictLabel}")`);
   expect(extra > 250 && extra < 450, `busy extension adds about 300 ms of work (measured ${Math.round(extra)} ms)`);

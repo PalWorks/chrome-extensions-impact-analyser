@@ -14,9 +14,11 @@
   "scripts": {
     "start": "node src/server.js",
     "cli": "node src/cli.js",
-    "self-test": "node test/self-test.js"
+    "self-test": "node test/self-test.js",
+    "self-test:firefox": "node test/self-test.js --firefox"
   },
   "dependencies": {
+    "@puppeteer/browsers": "3.2.3",
     "puppeteer": "25.12.0"
   }
 }

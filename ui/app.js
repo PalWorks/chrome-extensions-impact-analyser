@@ -7,7 +7,7 @@ const S = {
   init: null,
   screen: 'loading',
   browsers: [], // Detected browsers plus any folder the user typed in.
-  profile: null, // {browserName, profilePath, name, account}
+  profile: null, // {browserName, engine, profilePath, name, account}
   extensions: null, // Extensions of the chosen profile.
   extensionsFor: '',
   extraExtensions: [], // Unpacked folders added by hand.
@@ -141,7 +141,7 @@ function renderProfile() {
   return `${stepper(1)}
   <h1>Which browser profile do you want to check?</h1>
   <p class="lead">We copy its extensions into a separate test browser. Your own browser and its data are not changed.</p>
-  ${groups.length ? list : '<div class="notice warn">No Chrome, Edge, Brave or Vivaldi profile was found on this computer. Enter the profile folder below.</div>'}
+  ${groups.length ? list : '<div class="notice warn">No Chrome, Edge, Brave, Vivaldi or Firefox profile was found on this computer. Enter the profile folder below.</div>'}
   <details class="more" ${groups.length ? '' : 'open'}>
     <summary>Use a different folder</summary>
     <label class="field" for="custom-path">Profile folder</label>
@@ -149,9 +149,16 @@ function renderProfile() {
       <input id="custom-path" type="text" placeholder="${esc(placeholder)}" autocomplete="off" spellcheck="false">
       <button type="button" class="btn" id="custom-find">Find</button>
     </div>
-    <div class="hint" id="custom-hint">To find it, open <b>chrome://version</b> in the browser and copy the <b>Profile Path</b>.</div>
+    <div class="hint" id="custom-hint">To find it, open <b>chrome://version</b> in the browser and copy the <b>Profile Path</b>. In Firefox, open <b>about:support</b> and copy the <b>Profile Folder</b>.</div>
   </details>
   <div class="actions"><button type="button" class="btn primary" id="next" ${current ? '' : 'disabled'}>Next: choose extensions</button></div>`;
+}
+
+function setProfile(group, p) {
+  const engine = p.engine || group.engine || 'chrome';
+  // Extensions added by hand only work in the browser they were made for.
+  if (S.profile && S.profile.engine !== engine) S.extraExtensions = [];
+  S.profile = {browserName: group.name, engine, profilePath: p.path, name: p.name, account: p.account};
 }
 
 function bindProfile() {
@@ -159,7 +166,7 @@ function bindProfile() {
     input.addEventListener('change', () => {
       const group = S.browsers.find(g => g.name === input.dataset.browser);
       const p = group.profiles.find(x => x.path === input.value);
-      S.profile = {browserName: group.name, profilePath: p.path, name: p.name, account: p.account};
+      setProfile(group, p);
       store.set('profile', p.path);
       app.querySelector('#next').disabled = false;
     }),
@@ -181,11 +188,10 @@ function bindProfile() {
         return;
       }
       const group = r.profile
-        ? {name: 'Other folder', profiles: [r.profile]}
-        : {name: `Folder: ${r.userDataDir}`, profiles: r.profiles};
+        ? {name: 'Other folder', engine: r.profile.engine, profiles: [r.profile]}
+        : {name: `Folder: ${r.userDataDir}`, engine: r.engine, profiles: r.profiles};
       S.browsers = [...S.browsers.filter(g => g.name !== group.name), group];
-      const p = group.profiles[0];
-      S.profile = {browserName: group.name, profilePath: p.path, name: p.name, account: p.account};
+      setProfile(group, group.profiles[0]);
       render();
     } catch (err) {
       hint.innerHTML = `<span class="error">${esc(err.message)}</span>`;
@@ -231,7 +237,7 @@ function renderExtensions() {
   ${off.length ? `<details class="more" ${on.length ? '' : 'open'}><summary>Turned off in your browser (${off.length})</summary><div class="choice-list">${off.map(extRow).join('')}</div></details>` : ''}
   <details class="more">
     <summary>Add an extension folder (for developers)</summary>
-    <label class="field" for="ext-path">Folder that contains manifest.json</label>
+    <label class="field" for="ext-path">${S.profile?.engine === 'firefox' ? 'Folder that contains manifest.json, or an .xpi file' : 'Folder that contains manifest.json'}</label>
     <div class="input-row">
       <input id="ext-path" type="text" autocomplete="off" spellcheck="false">
       <button type="button" class="btn" id="ext-add">Add</button>
@@ -296,7 +302,7 @@ function bindExtensions() {
       return;
     }
     try {
-      const r = await api('/api/extension-folder', {path: input.value});
+      const r = await api('/api/extension-folder', {path: input.value, engine: S.profile?.engine || 'chrome'});
       if (r.error) {
         input.setAttribute('aria-invalid', 'true');
         hint.innerHTML = `<span class="error">${esc(r.error)}</span>`;
@@ -456,6 +462,7 @@ async function startRun() {
     await api('/api/run', {
       extensions: selectedExtensions().map(e => ({id: e.id, name: e.name, version: e.version, path: e.path})),
       urls: S.urls,
+      engine: S.profile?.engine || 'chrome',
       settings: settingsForRun(),
       source: S.profile ? {browser: S.profile.browserName, profileName: S.profile.name, profilePath: S.profile.profilePath} : null,
     });
@@ -535,7 +542,7 @@ function figures(r) {
   return `<div class="figures">
     <span>Extra work per page <b>${signedTime(h.mainThreadMs.value)}</b></span>
     <span>Slower to load <b>${h.load.significant ? signedTime(h.load.value) : 'no change'}</b></span>
-    <span>Memory <b>${mem}</b></span>
+    ${S.result?.engine === 'firefox' ? '' : `<span>Memory <b>${mem}</b></span>`}
   </div>`;
 }
 
@@ -556,7 +563,9 @@ function renderDone() {
   ${r.individual.map(resultCard).join('')}
   ${r.combined ? `<h2>All together</h2>${resultCard({...r.combined, combined: true})}` : ''}
   ${r.warnings.length ? `<div class="notice warn small"><b>Worth knowing</b><br>${r.warnings.map(esc).join('<br>')}</div>` : ''}
-  ${anyHeavy ? `<div class="notice info small"><b>Next step:</b> remove heavy extensions you rarely use. For ones you need, open the extension's details in your browser and set <b>Site access</b> to <b>On click</b>, so it stops running on every page.</div>` : ''}
+  ${anyHeavy ? `<div class="notice info small"><b>Next step:</b> remove heavy extensions you rarely use. ${r.engine === 'firefox'
+    ? 'For ones you need, open <b>about:addons</b>, choose the add-on, open <b>Permissions</b> and turn off access to all websites, so it runs only where you allow it.'
+    : 'For ones you need, open the extension\'s details in your browser and set <b>Site access</b> to <b>On click</b>, so it stops running on every page.'}</div>` : ''}
   <div class="actions three">
     <button type="button" class="btn" id="folder">Show files</button>
     <button type="button" class="btn" id="again">Test again</button>
@@ -742,7 +751,7 @@ quit.addEventListener('click', async () => {
   // Pre-select the last used profile, or the only one if there is just one.
   const all = S.browsers.flatMap(g => g.profiles.map(p => ({g, p})));
   const remembered = all.find(x => x.p.path === store.get('profile', '')) || (all.length === 1 ? all[0] : null);
-  if (remembered) S.profile = {browserName: remembered.g.name, profilePath: remembered.p.path, name: remembered.p.name, account: remembered.p.account};
+  if (remembered) setProfile(remembered.g, remembered.p);
 
   go(S.init.state.running ? 'run' : 'profile', {replace: true});
   if (S.init.state.running) {

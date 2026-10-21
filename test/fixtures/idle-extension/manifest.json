@@ -2,5 +2,6 @@
   "manifest_version": 3,
   "name": "Self-test: idle extension",
   "version": "1.0.0",
-  "description": "Test fixture. Does nothing, so it should show no measurable impact."
+  "description": "Test fixture. Does nothing, so it should show no measurable impact.",
+  "browser_specific_settings": {"gecko": {"id": "idle-extension@self-test.invalid"}}
 }

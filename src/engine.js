@@ -1,11 +1,13 @@
 // Runs the measurements. For every test setup ("no extensions", "one extension on its own",
-// "all chosen extensions together") it starts a separate, clean copy of Chrome for Testing,
-// loads each test site several times and records how much work the page and browser did.
+// "all chosen extensions together") it starts a separate, clean copy of Chrome for Testing
+// (or of Firefox, for Firefox add-ons), loads each test site several times and records how much
+// work the page and browser did.
 
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import puppeteer from 'puppeteer';
+import puppeteer, {PUPPETEER_REVISIONS} from 'puppeteer';
+import {Browser as BrowserName, computeExecutablePath, install} from '@puppeteer/browsers';
 
 export const DEFAULT_SETTINGS = {
   rounds: 5, // How many times each site is loaded for each setup.
@@ -42,6 +44,56 @@ const COLLECTOR = `(() => {
     }).observe({type: 'longtask', buffered: true});
   } catch {}
 })();`;
+
+// Firefox has no long-task timing and no Chrome DevTools metrics. Instead, a tiny timer runs
+// over and over on the page; every gap longer than 10 ms is time the page's main thread was busy
+// (with the page's own scripts or an extension's), and the part of each gap beyond 50 ms is
+// time the page could not respond.
+const FIREFOX_COLLECTOR = `(() => {
+  if (window !== window.top || window.__extensionImpact) return;
+  const s = window.__extensionImpact = {lcp: 0, busy: 0, blocking: 0};
+  try {
+    new PerformanceObserver(list => {
+      for (const e of list.getEntries()) s.lcp = e.startTime;
+    }).observe({type: 'largest-contentful-paint', buffered: true});
+  } catch {}
+  let last = performance.now();
+  const channel = new MessageChannel();
+  channel.port1.onmessage = () => {
+    const now = performance.now();
+    const gap = now - last;
+    if (gap > 10) s.busy += gap;
+    if (gap > 50) s.blocking += gap - 50;
+    last = now;
+    setTimeout(() => channel.port2.postMessage(0), 0);
+  };
+  channel.port2.postMessage(0);
+})();`;
+
+// Firefox for testing is downloaded the first time a Firefox profile is tested.
+async function firefoxExecutable() {
+  const cacheDir = await puppeteer.defaultDownloadPath();
+  const buildId = PUPPETEER_REVISIONS.firefox;
+  return {cacheDir, buildId, path: computeExecutablePath({browser: BrowserName.FIREFOX, buildId, cacheDir})};
+}
+
+export async function ensureFirefox(log = () => {}) {
+  const ff = await firefoxExecutable();
+  if (fs.existsSync(ff.path)) return ff.path;
+  log('Downloading Firefox for testing (about 90 MB). This happens only once.');
+  let lastPct = -1;
+  await install({
+    browser: BrowserName.FIREFOX,
+    buildId: ff.buildId,
+    cacheDir: ff.cacheDir,
+    downloadProgressCallback: (done, total) => {
+      const pct = total ? Math.floor((done / total) * 4) * 25 : 0;
+      if (pct > lastPct && pct < 100) log(`Downloading Firefox: ${pct}%`);
+      lastPct = pct;
+    },
+  });
+  return ff.path;
+}
 
 export class CancelledError extends Error {
   constructor() {
@@ -115,7 +167,17 @@ export function estimateSeconds(extensionCount, urlCount, settings) {
 
 // Copies an extension into the working folder, leaving out the store's signature folder,
 // because Chrome refuses to load a folder whose top-level names start with "_" (except _locales).
-function copyExtension(src, dest) {
+// Firefox add-ons (.xpi files, or folders) are copied unchanged.
+function copyExtension(src, dest, engine) {
+  if (fs.statSync(src).isFile()) {
+    fs.mkdirSync(path.dirname(dest), {recursive: true});
+    fs.copyFileSync(src, dest);
+    return;
+  }
+  if (engine === 'firefox') {
+    fs.cpSync(src, dest, {recursive: true, dereference: true});
+    return;
+  }
   fs.cpSync(src, dest, {
     recursive: true,
     dereference: true,
@@ -133,6 +195,8 @@ export async function runBenchmark(request, {onProgress = () => {}, signal} = {}
   if (urls.length === 0) throw new Error('Add at least one website to test.');
   const extInput = (request.extensions || []).filter(e => e && e.path);
   if (extInput.length === 0) throw new Error('Choose at least one extension to test.');
+  const engine = request.engine === 'firefox' ? 'firefox' : 'chrome';
+  const firefox = engine === 'firefox';
 
   const emit = (type, data) => onProgress({type, ...data});
   const log = (message, level = 'info') => emit('log', {level, message});
@@ -144,9 +208,26 @@ export async function runBenchmark(request, {onProgress = () => {}, signal} = {}
   const startedAt = new Date();
   let noSandbox = false;
   let userAgent = '';
-  let chromeVersion = '';
+  let browserVersion = '';
+  let firefoxPath = '';
 
   async function launch(profileDir) {
+    if (firefox) {
+      return puppeteer.launch({
+        browser: 'firefox',
+        executablePath: firefoxPath,
+        headless: settings.headless,
+        userDataDir: profileDir,
+        defaultViewport: VIEWPORT,
+        args: [`--width=${VIEWPORT.width}`, `--height=${VIEWPORT.height}`],
+        // Firefox cannot empty its cache on request, so it is switched off instead.
+        extraPrefsFirefox: {'browser.cache.disk.enable': false, 'browser.cache.memory.enable': false},
+        protocolTimeout: 120_000,
+        handleSIGINT: false,
+        handleSIGTERM: false,
+        handleSIGHUP: false,
+      });
+    }
     const args = [`--window-size=${VIEWPORT.width},${VIEWPORT.height}`, '--no-first-run', '--no-default-browser-check'];
     if (userAgent) args.push(`--user-agent=${userAgent}`);
     if (noSandbox) args.push('--no-sandbox');
@@ -190,6 +271,7 @@ export async function runBenchmark(request, {onProgress = () => {}, signal} = {}
   }
 
   async function browserCpuMs(session) {
+    if (!session) return null;
     try {
       const {processInfo} = await session.send('SystemInfo.getProcessInfo');
       return processInfo.reduce((sum, p) => sum + p.cpuTime, 0) * 1000;
@@ -200,6 +282,7 @@ export async function runBenchmark(request, {onProgress = () => {}, signal} = {}
 
   // Sums the JavaScript memory used by the extensions' own background pages and workers.
   async function extensionHeapMB(browser, ids) {
+    if (firefox) return null; // Not available through Firefox's automation interface.
     if (ids.length === 0) return 0;
     let total = 0;
     for (const target of browser.targets()) {
@@ -227,6 +310,38 @@ export async function runBenchmark(request, {onProgress = () => {}, signal} = {}
       if (other !== page) await other.close().catch(() => {});
     }
     const sample = {ok: false};
+    if (firefox) {
+      try {
+        let requests = 0;
+        page.on('requestfinished', () => requests++);
+        page.on('requestfailed', () => requests++);
+        const cookies = await browser.cookies().catch(() => []);
+        if (cookies.length) await browser.deleteCookie(...cookies).catch(() => {});
+        await page.evaluateOnNewDocument(FIREFOX_COLLECTOR);
+        const response = await page.goto(url, {waitUntil: 'load', timeout: settings.pageTimeoutSeconds * 1000});
+        sample.status = response ? response.status() : null;
+        await sleep(settings.observeSeconds * 1000, signal);
+        const timing = await page.evaluate(() => {
+          const nav = performance.getEntriesByType('navigation')[0];
+          const s = window.__extensionImpact || {lcp: 0, busy: 0, blocking: 0};
+          return {
+            domContentLoaded: nav ? nav.domContentLoadedEventEnd : null,
+            load: nav && nav.loadEventEnd > 0 ? nav.loadEventEnd : null,
+            fcp: performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? null,
+            lcp: s.lcp || null,
+            tbt: s.blocking,
+            mainThreadMs: s.busy,
+          };
+        });
+        Object.assign(sample, timing, {ok: true, scriptMs: null, pageHeapMB: null, requests, transferKB: null, browserCpuMs: null});
+      } catch (err) {
+        if (err instanceof CancelledError) throw err;
+        sample.error = err.message.split('\n')[0];
+      } finally {
+        await page.close().catch(() => {});
+      }
+      return sample;
+    }
     try {
       const cdp = await page.createCDPSession();
       await cdp.send('Performance.enable');
@@ -294,8 +409,11 @@ export async function runBenchmark(request, {onProgress = () => {}, signal} = {}
       const workPath = path.join(workDir, 'extensions', key);
       const entry = {key, id: e.id || '', name: e.name || path.basename(e.path), version: e.version || '', sourcePath: e.path, workPath, status: 'ok', error: ''};
       try {
-        if (!fs.existsSync(path.join(e.path, 'manifest.json'))) throw new Error('No manifest.json in this folder.');
-        copyExtension(e.path, workPath);
+        const isXpi = firefox && /\.xpi$/i.test(e.path);
+        if (!isXpi && !fs.existsSync(path.join(e.path, 'manifest.json'))) throw new Error('No manifest.json in this folder.');
+        if (!fs.existsSync(e.path)) throw new Error('The extension is no longer there.');
+        copyExtension(e.path, workPath + (fs.statSync(e.path).isFile() ? '.xpi' : ''), engine);
+        if (fs.statSync(e.path).isFile()) entry.workPath = workPath + '.xpi';
       } catch (err) {
         entry.status = 'failed';
         entry.error = `Could not copy the extension: ${err.message}`;
@@ -330,14 +448,21 @@ export async function runBenchmark(request, {onProgress = () => {}, signal} = {}
 
     // 2. Start the test browser once with no extensions: learn its version and warm up DNS.
     check();
+    if (firefox) {
+      emit('phase', {message: 'Getting Firefox ready'});
+      firefoxPath = await ensureFirefox(log);
+      check();
+    }
     emit('phase', {message: 'Checking the test browser and your websites'});
     {
       const browser = await launch(profileDir('probe'));
       try {
-        chromeVersion = (await browser.version()).replace(/^HeadlessChrome\//, 'Chrome/');
-        userAgent = (await browser.userAgent()).replace('HeadlessChrome', 'Chrome');
+        browserVersion = (await browser.version()).replace(/^HeadlessChrome\//, 'Chrome/').replace(/^firefox\//i, 'Firefox/');
         const page = await browser.newPage();
-        await page.setUserAgent(userAgent);
+        if (!firefox) {
+          userAgent = (await browser.userAgent()).replace('HeadlessChrome', 'Chrome');
+          await page.setUserAgent(userAgent);
+        }
         for (const url of urls) {
           check();
           try {
@@ -352,7 +477,7 @@ export async function runBenchmark(request, {onProgress = () => {}, signal} = {}
         await browser.close().catch(() => {});
       }
     }
-    log(`Test browser: ${chromeVersion}`);
+    log(`Test browser: ${browserVersion}`);
 
     // 3. Warm-up: install each setup's extensions once and let them finish first-run work
     //    (downloading block lists, building caches) so the measurements see normal use.
@@ -412,7 +537,7 @@ export async function runBenchmark(request, {onProgress = () => {}, signal} = {}
           const {ids, errors} = await installAll(browser, exts);
           if (errors.length) throw new Error(`Extension failed to load: ${errors[0].message}`);
           await sleep(settings.settleSeconds * 1000, signal);
-          const browserSession = await browser.target().createCDPSession();
+          const browserSession = firefox ? null : await browser.target().createCDPSession();
           for (const url of urls) {
             check();
             const sample = await measure(browser, browserSession, url);
@@ -440,8 +565,9 @@ export async function runBenchmark(request, {onProgress = () => {}, signal} = {}
       tool: {name: 'Chrome Extensions Impact Analyser', version: request.toolVersion || ''},
       startedAt: startedAt.toISOString(),
       finishedAt: new Date().toISOString(),
+      engine,
       environment: {
-        chrome: chromeVersion,
+        browser: browserVersion,
         platform: `${os.type()} ${os.release()} (${process.arch})`,
         cpu: os.cpus()[0]?.model?.trim() || '',
         cpuCount: os.cpus().length,
