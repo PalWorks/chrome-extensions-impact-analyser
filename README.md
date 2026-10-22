@@ -6,7 +6,7 @@ Chrome Firefox Browser Extensions Impact Analyser copies the extensions from you
 
 Your own browser, profile and data are never changed.
 
-Last updated: 2026-10-22T12:58:29+05:30
+Last updated: 2026-10-22T20:54:07+05:30
 
 ## What you get
 
@@ -34,6 +34,8 @@ A terminal window opens, and then the app opens in your web browser. Keep the te
 
 ## Use it
 
+The bar at the top of the app stays on screen. **Reports** opens your past reports, and **Auto**, **Light** and **Dark** set the colour theme (Auto follows your device; the choice also applies to reports).
+
 1. **Choose a browser profile.** All profiles found on your computer are listed. For anything else, use **Use a different folder** and paste the **Profile Path** shown on `chrome://version` (in Firefox: the **Profile Folder** shown on `about:support`).
 2. **Choose extensions.** The ones turned on in that profile are already ticked.
 3. **Choose websites** and how thorough the test should be. Use sites you visit every day. The page shows how long the test will take.
@@ -44,7 +46,7 @@ Past reports stay in the `results` folder and under **Past reports** in the app.
 
 ## The report
 
-The buttons at the top of the report, from left to right:
+The bar at the top stays on screen while you scroll, as it does in the app. Its buttons, from left to right:
 
 | Button | What it does |
 |---|---|

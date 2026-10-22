@@ -2,6 +2,8 @@
 
 ## Unreleased (2026-10-21T17:37:59+05:30)
 
+* App home page redesign (2026-10-22T20:54:07+05:30): frozen app bar with icon, tagline, Reports button and Auto/Light/Dark switch (labels under icons on phones, compact once scrolled); welcome strip on the first step; numbered, named steps; coloured browser and profile marks; icons on the thoroughness choices; larger progress on the test screen; verdict colour strip on result cards; footer with PalWorks credit, source code, problem reporting and licence links, then version and Quit.
+* The report uses the same frozen app bar; test progress shows inside it, so it stays visible while scrolling. The theme choice is shared between the app and reports.
 * New report (2026-10-22T12:58:29+05:30):
   * Sortable columns with clear arrows (a **Sort by** menu on phones), verdict filter chips, and search that opens from an icon.
   * Tick boxes with a **Total** row at the top that adds up the ticked extensions, plus **Test these together** to measure that exact combination.

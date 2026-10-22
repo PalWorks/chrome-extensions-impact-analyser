@@ -90,9 +90,40 @@ function signedTime(ms) {
 }
 
 function stepper(n) {
-  const dots = [1, 2, 3].map(i => `<span class="dot${i <= n ? ' on' : ''}"></span>`).join('');
-  return `<div class="stepper"><span class="dots" aria-hidden="true">${dots}</span><span>Step ${n} of 3</span></div>`;
+  const names = ['Profile', 'Extensions', 'Websites'];
+  const items = names.map((t, i) => {
+    const k = i + 1;
+    const cls = k < n ? 'done' : k === n ? 'now' : '';
+    return `<li class="${cls}"${k === n ? ' aria-current="step"' : ''}><span class="n">${k < n ? '✓' : k}</span><span class="t">${t}</span></li>`;
+  });
+  return `<ol class="steps" aria-label="Step ${n} of 3">${items.join('')}</ol>`;
 }
+
+// Small, friendly colour marks: one per browser, and one per profile from its name.
+const BROWSER_COLOURS = {chrome: '#1a73e8', edge: '#0f7c8c', brave: '#d9480f', vivaldi: '#c92a2a', chromium: '#3b5bdb', firefox: '#e8590c'};
+const AVATAR_COLOURS = ['#1f5fbf', '#6a3fd1', '#12857a', '#c2410c', '#b91c5c', '#4d7c0f', '#0e7490', '#7c3aed'];
+const WINDOW_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>';
+function browserColour(name) {
+  const n = name.toLowerCase();
+  const key = Object.keys(BROWSER_COLOURS).find(k => n.includes(k === 'chrome' ? 'chrome' : k));
+  return BROWSER_COLOURS[n.includes('chromium') ? 'chromium' : key] || '#61615c';
+}
+function avatar(name) {
+  let h = 0;
+  for (const c of String(name)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const letters = String(name).replace(/[^\p{L}\p{N} ]/gu, ' ').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+  return `<span class="avatar" aria-hidden="true" style="background:${AVATAR_COLOURS[h % AVATAR_COLOURS.length]}">${esc(letters)}</span>`;
+}
+const HERO_ICONS = {
+  safe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+  plain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h13"/></svg>',
+  browsers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
+};
+const SEG_ICONS = {
+  3: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>',
+  5: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>',
+  9: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>',
+};
 
 function go(screen, {replace = false} = {}) {
   S.screen = screen;
@@ -123,10 +154,11 @@ function renderProfile() {
   const current = S.profile?.profilePath;
   const list = groups
     .map(
-      g => `<h2>${esc(g.name)}</h2><div class="choice-list">${g.profiles
+      g => `<h2 class="group"><span class="gicon" style="background:${browserColour(g.name)}">${WINDOW_ICON}</span>${esc(g.name)} <span class="count">· ${g.profiles.length} profile${g.profiles.length === 1 ? '' : 's'}</span></h2><div class="choice-list">${g.profiles
         .map(
           p => `<label class="choice">
             <input type="radio" name="profile" value="${esc(p.path)}" data-browser="${esc(g.name)}" ${p.path === current ? 'checked' : ''}>
+            ${avatar(p.name)}
             <span class="body"><span class="title">${esc(p.name)}</span>${p.account ? `<span class="sub">${esc(p.account)}</span>` : ''}</span>
           </label>`,
         )
@@ -138,7 +170,16 @@ function renderProfile() {
     darwin: '/Users/you/Library/Application Support/Google/Chrome/Default',
   }[S.init.platform] || '/home/you/.config/google-chrome/Default';
 
-  return `${stepper(1)}
+  return `<section class="hero" aria-label="About this tool">
+    <h2>Is an extension slowing you down?</h2>
+    <p>Pick a browser profile, and we measure every extension in it on real websites.</p>
+    <ul>
+      <li>${HERO_ICONS.safe}Your browser is never changed</li>
+      <li>${HERO_ICONS.plain}Plain-language verdicts</li>
+      <li>${HERO_ICONS.browsers}Chrome, Edge, Brave, Vivaldi, Firefox</li>
+    </ul>
+  </section>
+  ${stepper(1)}
   <h1>Which browser profile do you want to check?</h1>
   <p class="lead">We copy its extensions into a separate test browser. Your own browser and its data are not changed.</p>
   ${groups.length ? list : '<div class="notice warn">No Chrome, Edge, Brave, Vivaldi or Firefox profile was found on this computer. Enter the profile folder below.</div>'}
@@ -355,7 +396,7 @@ function renderSites() {
 
   <h2>How thorough?</h2>
   <div class="segmented" role="radiogroup" aria-label="How thorough">
-    ${THOROUGHNESS.map(t => `<label><input type="radio" name="rounds" value="${t.rounds}" ${S.rounds === t.rounds ? 'checked' : ''}><span class="t">${t.title}</span><span class="s">${t.sub}</span></label>`).join('')}
+    ${THOROUGHNESS.map(t => `<label><input type="radio" name="rounds" value="${t.rounds}" ${S.rounds === t.rounds ? 'checked' : ''}>${SEG_ICONS[t.rounds]}<span class="t">${t.title}</span><span class="s">${t.sub}</span></label>`).join('')}
   </div>
   <p class="hint" id="estimate"></p>
 
@@ -477,10 +518,11 @@ async function startRun() {
 function renderRun() {
   return `<h1>Testing your extensions</h1>
   <p class="lead">You can keep using your computer. Leave this tab open; closing it does not stop the test.</p>
-  <div class="card">
+  <div class="card run-card">
+    <span class="small muted"><span class="pulse" aria-hidden="true"></span>Testing in the background</span>
+    <span class="big" id="pct">0%</span>
     <div class="progress" role="progressbar" aria-label="Test progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="bar"></div></div>
-    <div class="progress-meta"><span id="pct">0%</span><span id="eta">Working out how long this takes…</span></div>
-    <p id="phase" class="small" style="margin:12px 0 0"></p>
+    <div class="progress-meta"><span id="phase"></span><span id="eta">Working out how long this takes…</span></div>
     <p id="current" class="small muted" style="margin:4px 0 0"></p>
   </div>
   <details class="more"><summary>Show activity log</summary><pre class="log" id="log"></pre></details>
@@ -547,7 +589,7 @@ function figures(r) {
 }
 
 function resultCard(r) {
-  return `<div class="card result${r.combined ? ' combined' : ''}">
+  return `<div class="card result vb-${esc(r.verdict)}${r.combined ? ' combined' : ''}">
     <span class="name">${esc(r.label)}</span>
     <span class="badge v-${esc(r.verdict)}">${esc(r.verdictLabel)}</span>
     <span class="summary">${esc(r.summary)}</span>
@@ -711,6 +753,26 @@ function connectEvents() {
 }
 
 // ---------- start ----------
+
+// Colour theme: Auto follows the device. Shared with the reports, which use the same key.
+function applyTheme(mode) {
+  if (mode === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = mode;
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === mode)));
+  try {
+    if (mode === 'auto') localStorage.removeItem('eia-theme');
+    else localStorage.setItem('eia-theme', mode);
+  } catch {
+    // Remembering the theme is only a convenience.
+  }
+}
+applyTheme(document.documentElement.dataset.theme || 'auto');
+// A shadow under the header once the page has scrolled, so it reads as floating.
+const appbar = document.querySelector('.appbar');
+const onScroll = () => appbar.classList.toggle('scrolled', window.scrollY > 8);
+window.addEventListener('scroll', onScroll, {passive: true});
+onScroll();
+document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => applyTheme(b.dataset.themeSet)));
 
 document.getElementById('past-link').addEventListener('click', async () => {
   if (S.screen === 'run') return;

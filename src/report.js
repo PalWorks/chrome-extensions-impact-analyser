@@ -21,6 +21,7 @@ const ICON = {
   auto: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 0 0 17z" fill="currentColor"/></svg>',
   light: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
   dark: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.6 6.6 0 0 0 10.7 10.7z"/></svg>',
+  logo: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4.5 17a8.5 8.5 0 1 1 15 0"/><path d="M12 13l4-5"/><circle cx="12" cy="13" r="1.4" fill="currentColor"/></svg>',
   download: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg>',
 };
 
@@ -84,13 +85,13 @@ export function renderHtml(data, {appToken = '', reportId = ''} = {}) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${appToken ? `<meta name="app-token" content="${esc(appToken)}">\n<meta name="report-id" content="${esc(reportId)}">` : ''}
 <title>${esc(TITLE)}, ${esc(when.toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}))}</title>
-<script>try{const t=localStorage.getItem('report-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch{}</script>
+<script>try{const t=localStorage.getItem('eia-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch{}</script>
 <style>
-:root{--bg:#f6f6f3;--card:#fff;--text:#1c1c1a;--muted:#61615c;--line:#e0e0d9;--accent:#1f5fbf;--accent-text:#fff;--accent-soft:#e6eefb;--focus:#1f5fbf;
+:root{--hero-a:#1f5fbf;--brand2:#6a3fd1;--brand3:#12a594;--bg:#f6f6f3;--card:#fff;--text:#1c1c1a;--muted:#61615c;--line:#e0e0d9;--accent:#1f5fbf;--accent-text:#fff;--accent-soft:#e6eefb;--focus:#1f5fbf;
 --heavy:#b3261e;--heavy-bg:#fbe9e7;--moderate:#8a5300;--moderate-bg:#fff1d6;--light:#3d5a1e;--light-bg:#eef5e2;--none:#4a4a46;--none-bg:#ededea;--faster:#0b5c4f;--faster-bg:#ddf3ee;--shadow:0 1px 2px rgba(0,0,0,.06);color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#151514;--card:#1f1f1d;--text:#ececea;--muted:#a5a59f;--line:#34342f;--accent:#8db4ff;--accent-text:#0d1b33;--accent-soft:#1d2a40;--focus:#8db4ff;
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--hero-a:#1d4fa0;--brand2:#4a2fa0;--brand3:#0f7d70;--bg:#151514;--card:#1f1f1d;--text:#ececea;--muted:#a5a59f;--line:#34342f;--accent:#8db4ff;--accent-text:#0d1b33;--accent-soft:#1d2a40;--focus:#8db4ff;
 --heavy:#ffb4a9;--heavy-bg:#4a1c17;--moderate:#ffcf86;--moderate-bg:#432c06;--light:#c3df9b;--light-bg:#26331a;--none:#cfcfca;--none-bg:#30302c;--faster:#9ee5d6;--faster-bg:#123a33;--shadow:none;color-scheme:dark}}
-:root[data-theme=dark]{--bg:#151514;--card:#1f1f1d;--text:#ececea;--muted:#a5a59f;--line:#34342f;--accent:#8db4ff;--accent-text:#0d1b33;--accent-soft:#1d2a40;--focus:#8db4ff;
+:root[data-theme=dark]{--hero-a:#1d4fa0;--brand2:#4a2fa0;--brand3:#0f7d70;--bg:#151514;--card:#1f1f1d;--text:#ececea;--muted:#a5a59f;--line:#34342f;--accent:#8db4ff;--accent-text:#0d1b33;--accent-soft:#1d2a40;--focus:#8db4ff;
 --heavy:#ffb4a9;--heavy-bg:#4a1c17;--moderate:#ffcf86;--moderate-bg:#432c06;--light:#c3df9b;--light-bg:#26331a;--none:#cfcfca;--none-bg:#30302c;--faster:#9ee5d6;--faster-bg:#123a33;--shadow:none;color-scheme:dark}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -102,9 +103,22 @@ h2{font-size:1.15rem;margin:0}
 .meta,.sub,.muted{color:var(--muted)}.sub{font-size:.8rem}
 a{color:var(--accent)}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
-.top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between}
-.top .title{flex:1 1 420px;min-width:0}
-.top .tools{display:flex;gap:8px;align-items:center}
+/* Frozen app bar, the same as the app's home page. */
+.appbar{position:sticky;top:0;z-index:30;padding-top:env(safe-area-inset-top,0px);background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);transition:box-shadow .2s}
+.appbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;background:linear-gradient(90deg,var(--hero-a),var(--brand2) 55%,var(--brand3))}
+.appbar.scrolled{box-shadow:0 2px 12px rgba(0,0,0,.12)}
+.appbar-inner{max-width:1200px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 12px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0;flex:1 1 320px;color:var(--text);text-decoration:none;min-height:44px}
+.logo{width:40px;height:40px;flex:none;border-radius:12px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--hero-a),var(--brand2));box-shadow:0 2px 8px rgba(31,95,191,.25)}
+.logo svg{width:24px;height:24px}
+.brand-text{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.brand-text b{font-size:1rem}
+.brand-text small{color:var(--muted);font-size:.8rem}
+.appbar.scrolled .brand-text small{display:none}
+.tools{display:flex;gap:8px;align-items:center}
+.appbar .runbar{max-width:1200px;margin:0 auto 10px;padding:10px 14px;width:calc(100% - 32px)}
+.title{margin-top:4px}
+html{scroll-padding-top:110px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-weight:600;cursor:pointer;text-decoration:none}
 .btn:hover{border-color:var(--muted)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-text)}
@@ -223,8 +237,14 @@ footer a{color:var(--muted);font-weight:600}
 /* Phones: icons get labels, tables become cards. */
 @media (max-width:720px){
   h1{font-size:1.25rem}
-  .top .tools{width:100%;display:grid;grid-template-columns:repeat(var(--tools,7),1fr);gap:4px}
-  .top .tools .seg{grid-column:span 3;display:grid;grid-template-columns:repeat(3,1fr)}
+  .brand{flex-basis:100%}
+  .tools{width:100%;display:grid;grid-template-columns:repeat(var(--tools,7),1fr);gap:4px}
+  .tools .seg{grid-column:span 3;display:grid;grid-template-columns:repeat(3,1fr)}
+  .appbar-inner{padding-block:8px}
+  .appbar.scrolled .appbar-inner{flex-wrap:nowrap}
+  .appbar.scrolled .brand{flex:none}
+  .appbar.scrolled .brand-text{display:none}
+  .appbar.scrolled .tools{width:auto;flex:1}
   .icon{width:100%;height:auto;min-height:52px;padding:6px 2px}
   .icon .lbl{display:block;font-size:.66rem;font-weight:600;line-height:1}
   .menu>summary.icon{width:100%}
@@ -256,17 +276,17 @@ footer a{color:var(--muted);font-weight:600}
   dl{grid-template-columns:1fr}dt{margin-top:6px}
 }
 @page{size:A4 landscape;margin:14mm 12mm 16mm;@bottom-center{content:"Page " counter(page) " of " counter(pages);font:10px system-ui,sans-serif;color:#666}}
-@media print{.controls,.tools,.panelbox,.runbar,.pick,#run-picked{display:none!important}body{background:#fff;color:#000}details{break-inside:avoid}details>*{display:block}.scroll{overflow:visible}main{max-width:none}}
+@media print{.appbar{position:static;backdrop-filter:none}.controls,.tools,.panelbox,.runbar,.pick,#run-picked{display:none!important}body{background:#fff;color:#000}details{break-inside:avoid}details>*{display:block}.scroll{overflow:visible}main{max-width:none}}
 .snapshot .controls,.snapshot .tools,.snapshot .panelbox,.snapshot .runbar,.snapshot .pick,.snapshot #run-picked{display:none!important}
 </style>
 </head>
 <body>
-<main>
-<div class="top">
-  <div class="title">
-    <h1>${esc(TITLE)}</h1>
-    <div class="meta">${esc(when.toLocaleString('en-GB', {dateStyle: 'long', timeStyle: 'short'}))} · ${esc(sourceText)} · ${d.urls.length} website${d.urls.length === 1 ? '' : 's'} · ${s.rounds} rounds · ${loads} page loads</div>
-  </div>
+<header class="appbar" id="appbar">
+<div class="appbar-inner">
+  <${appToken ? 'a href="/"' : 'span'} class="brand"${appToken ? ' aria-label="Chrome Firefox Browser Extensions Impact Analyser, back to the app"' : ''}>
+    <span class="logo">${ICON.logo}</span>
+    <span class="brand-text"><b>Chrome Firefox Browser Extensions Impact Analyser</b><small>Report of ${esc(when.toLocaleString('en-GB', {dateStyle: 'medium', timeStyle: 'short'}))}</small></span>
+  </${appToken ? 'a' : 'span'}>
   <div class="tools" id="tools">
     ${iconButton('id="retest" data-app aria-expanded="false" aria-controls="confirm"', ICON.retest, 'Run this test again', 'Re-test')}
     ${iconButton('id="search-toggle" aria-expanded="false" aria-controls="search-row"', ICON.search, 'Search', 'Search')}
@@ -287,9 +307,15 @@ footer a{color:var(--muted);font-weight:600}
     </details>
   </div>
 </div>
+<section class="card runbar" id="runbar" hidden aria-live="polite"></section>
+</header>
+<main>
+<div class="title">
+  <h1>Extension impact report</h1>
+  <div class="meta">${esc(when.toLocaleString('en-GB', {dateStyle: 'long', timeStyle: 'short'}))} · ${esc(sourceText)} · ${d.urls.length} website${d.urls.length === 1 ? '' : 's'} · ${s.rounds} rounds · ${loads} page loads</div>
+</div>
 
 <section class="card panelbox" id="confirm" hidden aria-live="polite"></section>
-<section class="card runbar" id="runbar" hidden aria-live="polite"></section>
 
 <section class="card panelbox" id="ask" hidden aria-labelledby="h-ask">
   <div id="ask-setup" hidden>
@@ -438,9 +464,13 @@ if (!TOKEN) {
 const applyTheme = mode => {
   if (mode === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = mode;
   document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === mode)));
-  try { mode === 'auto' ? localStorage.removeItem('report-theme') : localStorage.setItem('report-theme', mode); } catch {}
+  try { mode === 'auto' ? localStorage.removeItem('eia-theme') : localStorage.setItem('eia-theme', mode); } catch {}
 };
 applyTheme(document.documentElement.dataset.theme || 'auto');
+const appbar = $('#appbar');
+const onScroll = () => appbar.classList.toggle('scrolled', window.scrollY > 8);
+window.addEventListener('scroll', onScroll, {passive: true});
+onScroll();
 document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => applyTheme(b.dataset.themeSet)));
 
 // ---- results table: sort, filter, search, tick to total ----
@@ -587,7 +617,7 @@ $('#search-toggle').addEventListener('click', () => {
   const box = $('#search-row'), open = box.hidden;
   box.hidden = !open;
   $('#search-toggle').setAttribute('aria-expanded', String(open));
-  if (open) $('#q').focus();
+  if (open) { box.scrollIntoView({block: 'nearest', behavior: 'smooth'}); $('#q').focus({preventScroll: true}); }
   else if (S.q) { $('#q').value = ''; S.q = ''; update(); }
 });
 
@@ -721,6 +751,7 @@ $('#ask-toggle').addEventListener('click', async () => {
   box.hidden = !open;
   $('#ask-toggle').setAttribute('aria-expanded', String(open));
   if (!open) return;
+  box.scrollIntoView({block: 'nearest', behavior: 'smooth'});
   if (!AI.config) { try { AI.config = await api('/api/ai/config'); } catch { AI.config = {connected: false}; } }
   showAsk();
   (AI.config.connected ? $('#ai-q') : $('#ai-provider')).focus();
