@@ -96,6 +96,9 @@ function listReports() {
         extensions: data.extensions?.length || 0,
         sites: data.urls?.length || 0,
         profile: data.source?.profileName || '',
+        browser: data.source?.browser || (data.engine === 'firefox' ? 'Firefox' : ''),
+        rounds: data.settings?.rounds || null,
+        verdicts: (data.analysis?.individual || []).reduce((c, r) => ({...c, [r.verdict]: (c[r.verdict] || 0) + 1}), {}),
       });
     } catch {
       // Skip unreadable result folders.

@@ -628,23 +628,61 @@ function renderFailed() {
   <div class="actions"><button type="button" class="btn primary" id="retry">Back to websites</button></div>`;
 }
 
+// Past reports as a table: newest first by default, sortable by date, size and findings.
+const PAST_SORT = {key: 'date', dir: -1};
+const FOLDER_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/></svg>';
+const PAST_ARROWS = '<svg class="arrows" viewBox="0 0 16 16" aria-hidden="true"><path class="up" d="M8 2.5 12 7H4z"/><path class="down" d="M8 13.5 4 9h8z"/></svg>';
+const severity = r => (r.verdicts?.heavy || 0) * 1000 + (r.verdicts?.moderate || 0) * 30 + (r.verdicts?.light || 0);
+
+function findings(r) {
+  const v = r.verdicts || {};
+  const parts = [['heavy', 'Heavy'], ['moderate', 'Noticeable'], ['light', 'Small'], ['faster', 'Faster']]
+    .filter(([k]) => v[k])
+    .map(([k, label]) => `<span class="badge v-${k}">${v[k]} ${label}</span>`);
+  return parts.length ? parts.join(' ') : '<span class="badge v-none">No clear impact</span>';
+}
+
 function renderPast() {
-  const reports = S.init.reports;
+  const reports = [...S.init.reports].sort((a, b) => {
+    const val = {date: x => String(x.startedAt), extensions: x => x.extensions, findings: severity}[PAST_SORT.key];
+    const x = val(a), y = val(b);
+    return (x < y ? -1 : x > y ? 1 : 0) * PAST_SORT.dir;
+  });
+  const head = (key, label, cls = '') => `<th scope="col" class="${cls}" aria-sort="${PAST_SORT.key === key ? (PAST_SORT.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button type="button" class="sort" data-sort="${key}">${cls === 'num' ? PAST_ARROWS : ''}<span>${label}</span>${cls === 'num' ? '' : PAST_ARROWS}</button></th>`;
   const rows = reports
-    .map(
-      r => `<div class="card">
-        <div class="small muted">${esc(new Date(r.startedAt).toLocaleString())}${r.profile ? ` · ${esc(r.profile)}` : ''} · ${r.extensions} extension${r.extensions === 1 ? '' : 's'} · ${r.sites} site${r.sites === 1 ? '' : 's'}</div>
-        <p style="margin:6px 0 10px">${esc(r.headline)}</p>
-        <div class="inline-confirm">
-          <button type="button" class="btn" data-folder="${esc(r.id)}">Show files</button>
-          <a class="btn primary" href="/reports/${esc(r.id)}/report.html" target="_blank" rel="noopener">Open report</a>
-        </div>
-      </div>`,
-    )
+    .map(r => {
+      const d = new Date(r.startedAt);
+      return `<tr>
+        <td data-label="Tested"><b>${esc(d.toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}))}</b><span class="sub">${esc(d.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}))}</span></td>
+        <td data-label="Profile" class="prof"><b>${esc(r.profile || 'Extension folders')}</b>${r.browser ? `<span class="sub">${esc(r.browser)}</span>` : ''}</td>
+        <td data-label="Scope" class="scope">${r.extensions} extension${r.extensions === 1 ? '' : 's'}<span class="sub">${r.sites} website${r.sites === 1 ? '' : 's'}${r.rounds ? `, ${r.rounds} rounds` : ''}</span></td>
+        <td data-label="Findings" class="find"><div class="badges">${findings(r)}</div><span class="sub clamp" title="${esc(r.headline)}">${esc(r.headline)}</span></td>
+        <td class="act"><a class="btn primary small-btn" href="/reports/${esc(r.id)}/report.html" target="_blank" rel="noopener">Open report</a>
+          <button type="button" class="icon" data-folder="${esc(r.id)}" aria-label="Show files" title="Show files">${FOLDER_ICON}<span class="lbl" aria-hidden="true">Files</span></button></td>
+      </tr>`;
+    })
     .join('');
   return `<h1>Past reports</h1>
-  ${reports.length ? rows : '<div class="notice info">No reports yet. Run your first test and its report appears here.</div>'}
+  <p class="lead">${reports.length ? `${reports.length} report${reports.length === 1 ? '' : 's'} on this computer. Open one to sort, filter, re-test or download it.` : ''}</p>
+  ${reports.length
+    ? `<div class="card table-card"><table class="past">
+        <thead><tr>${head('date', 'Tested')}<th scope="col">Profile</th>${head('extensions', 'Scope')}${head('findings', 'Findings')}<th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`
+    : '<div class="notice info">No reports yet. Run your first test and its report appears here.</div>'}
   <div class="actions"><button type="button" class="btn primary" id="new">${reports.length ? 'Start a new test' : 'Run your first test'}</button></div>`;
+}
+
+function bindPast() {
+  app.querySelector('#new').addEventListener('click', () => go(S.profile ? 'extensions' : 'profile'));
+  app.querySelectorAll('[data-folder]').forEach(b => b.addEventListener('click', () => api('/api/open-folder', {id: b.dataset.folder}).catch(() => {})));
+  app.querySelectorAll('.past .sort').forEach(b => b.addEventListener('click', () => {
+    const key = b.dataset.sort;
+    PAST_SORT.dir = PAST_SORT.key === key ? -PAST_SORT.dir : -1;
+    PAST_SORT.key = key;
+    app.innerHTML = renderPast();
+    bindPast();
+    app.querySelector(`.past .sort[data-sort="${key}"]`)?.focus();
+  }));
 }
 
 function renderBlocked() {
@@ -665,6 +703,10 @@ function render() {
     app.innerHTML = renderBlocked();
     return;
   }
+  const past = document.getElementById('past-link');
+  past.classList.toggle('on', S.screen === 'past');
+  if (S.screen === 'past') past.setAttribute('aria-current', 'page');
+  else past.removeAttribute('aria-current');
   switch (S.screen) {
     case 'profile':
       app.innerHTML = renderProfile();
@@ -701,8 +743,7 @@ function render() {
       break;
     case 'past':
       app.innerHTML = renderPast();
-      app.querySelector('#new').addEventListener('click', () => go(S.profile ? 'extensions' : 'profile'));
-      app.querySelectorAll('[data-folder]').forEach(b => b.addEventListener('click', () => api('/api/open-folder', {id: b.dataset.folder}).catch(() => {})));
+      bindPast();
       break;
     default:
       app.innerHTML = '<div class="card skeleton" aria-hidden="true"></div>';

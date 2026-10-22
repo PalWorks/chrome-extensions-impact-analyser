@@ -327,3 +327,46 @@ html { scroll-padding-top: 96px; }
 .foot .made a { color: var(--text); }
 .foot .link { color: var(--muted); padding-inline: 0; }
 .foot .link:hover { color: var(--danger); }
+
+/* ---------- Past reports table (cards on phones) ---------- */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.table-card { padding: 0; overflow-x: auto; }
+table.past { border-collapse: collapse; width: 100%; font-size: .9rem; }
+.past th, .past td { padding: 12px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); line-height: 22px; }
+.past thead th { font-size: .78rem; line-height: 18px; color: var(--muted); font-weight: 600; vertical-align: middle; padding-block: 8px; white-space: nowrap; }
+.past tbody tr:last-child > * { border-bottom: 0; }
+.past tbody tr:hover > * { background: color-mix(in srgb, var(--accent-soft) 45%, transparent); }
+.past .num { text-align: right; font-variant-numeric: tabular-nums; }
+.past .sub { display: block; color: var(--muted); font-size: .8rem; line-height: 18px; }
+.past td:first-child { white-space: nowrap; }
+.past .prof { min-width: 140px; max-width: 200px; overflow-wrap: anywhere; }
+.past .scope { white-space: nowrap; }
+.past .find { min-width: 190px; }
+.past .badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.past .badge { line-height: 22px; padding: 0 10px; }
+.past .clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 4px; }
+.past .act { white-space: nowrap; text-align: right; }
+.past .act .icon { vertical-align: top; margin-left: 6px; }
+.small-btn { min-height: 44px; padding: 8px 14px; font-size: .9rem; }
+.past th .sort { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; min-height: 36px; padding: 4px 8px; margin: 0 -8px; border-radius: 8px; }
+.past th .sort:hover { background: var(--accent-soft); color: var(--text); }
+.past th .sort:focus-visible { outline: 3px solid var(--focus); }
+.past th.num .sort { justify-content: flex-end; }
+.past .arrows { width: 16px; height: 16px; flex: none; fill: currentColor; }
+.past .arrows path { opacity: .3; }
+.past th[aria-sort=ascending] .sort, .past th[aria-sort=descending] .sort { color: var(--accent); }
+.past th[aria-sort=ascending] .arrows .up, .past th[aria-sort=descending] .arrows .down { opacity: 1; }
+.past th[aria-sort=ascending] .arrows .down, .past th[aria-sort=descending] .arrows .up { opacity: 0; }
+@media (max-width: 599px) {
+  .past thead { display: none; }
+  .past, .past tbody, .past tr, .past td { display: block; width: 100%; }
+  .past tr { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; padding: 14px; border-bottom: 1px solid var(--line); }
+  .past tr > * { border: 0 !important; padding: 0; text-align: left; background: none !important; }
+  .past td::before { content: attr(data-label); display: block; font-size: .72rem; line-height: 16px; color: var(--muted); font-weight: 600; }
+  .past td.act::before { content: none; }
+  .past .num { text-align: left; }
+  .past .find, .past .act { grid-column: 1 / -1; }
+  .past .act { display: flex; gap: 8px; }
+  .past .act .btn { flex: 1; }
+  .past .act .icon { margin: 0; width: auto; padding-inline: 14px; flex-direction: row; gap: 6px; }
+}
