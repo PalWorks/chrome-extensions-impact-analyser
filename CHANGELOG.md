@@ -2,6 +2,7 @@
 
 ## Unreleased (2026-10-21T17:37:59+05:30)
 
+* New icon for **Ask** (2026-10-22T21:11:46+05:30): "AI" in an open frame with two sparkles, drawn as a scalable icon that follows the light and dark themes.
 * App home page redesign (2026-10-22T20:54:07+05:30): frozen app bar with icon, tagline, Reports button and Auto/Light/Dark switch (labels under icons on phones, compact once scrolled); welcome strip on the first step; numbered, named steps; coloured browser and profile marks; icons on the thoroughness choices; larger progress on the test screen; verdict colour strip on result cards; footer with PalWorks credit, source code, problem reporting and licence links, then version and Quit.
 * The report uses the same frozen app bar; test progress shows inside it, so it stays visible while scrolling. The theme choice is shared between the app and reports.
 * New report (2026-10-22T12:58:29+05:30):
