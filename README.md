@@ -6,7 +6,7 @@ Chrome Firefox Browser Extensions Impact Analyser copies the extensions from you
 
 Your own browser, profile and data are never changed.
 
-Last updated: 2026-10-22T21:45:34+05:30
+Last updated: 2026-10-22T22:05:14+05:30
 
 ## What you get
 
@@ -20,7 +20,7 @@ Last updated: 2026-10-22T21:45:34+05:30
 
 You need **Node.js 22.12 or newer**. Get the LTS version from https://nodejs.org/ and install it with the default options.
 
-The first start downloads about 200 MB (the test browser and one library). The first Firefox test downloads about 90 MB more (a separate copy of Firefox). Each happens only once and is stored inside this folder.
+The first start downloads about 200 MB (a separate copy of Chrome made for testing, plus a few libraries). Unpacked, that takes about 450 MB of disk space. The first Firefox test downloads about 90 MB more (a separate copy of Firefox), about 320 MB unpacked. Each happens only once and is stored inside this folder; deleting the folder removes it all.
 
 ## Start it
 
@@ -29,7 +29,7 @@ Download the latest version from the **Releases** page (https://github.com/PalWo
 | System | What to do |
 |---|---|
 | Windows | Double-click `start-windows.bat`. If Windows SmartScreen warns you, choose **More info**, then **Run anyway**. |
-| macOS | Double-click `start-macos.command`. The first time, macOS may block it: right-click the file, choose **Open**, then **Open** again. |
+| macOS | Double-click `start-macos.command`. The first time, macOS blocks it because it was downloaded from the internet. Right-click the file, choose **Open**, then **Open** again. If there is no **Open** button (newer macOS versions), open **System Settings**, go to **Privacy & Security**, scroll down and click **Open Anyway** next to the message about `start-macos.command`. |
 | Linux | Open a terminal in the folder and run `./start-linux.sh`. |
 
 A terminal window opens, and then the app opens in your web browser. Keep the terminal window open while you use the app. To stop, click **Quit the app** at the bottom of the page or close the terminal window.
@@ -130,7 +130,7 @@ npm run test:ai
 
 The first checks Chrome, the second Firefox (its first run downloads Firefox; after that no internet is needed). Each tests two built-in test extensions against a local page. One burns about 300 ms of CPU on every page and must come out as **Heavy impact**. The other does nothing and must come out as **No clear impact**. The Chrome self-test also checks the PDF, image and Word downloads. `test:ai` checks the AI assistant against a pretend AI service, with no key or internet needed.
 
-The same checks run on Windows, macOS and Linux in GitHub Actions, but only when started by hand from the Actions tab or when a release tag (for example `v0.2.0`) is pushed.
+The same checks run on Windows, macOS and Linux in GitHub Actions, but only when started by hand from the Actions tab or when a release tag (for example `v0.2.0`) is pushed. A second check, **Start files**, runs only by hand: it downloads the repository as a ZIP like a user would, runs each system's start file, and checks the app comes up, finds Chrome and Firefox profiles, and quits.
 
 ## For contributors
 

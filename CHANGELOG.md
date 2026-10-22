@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased (2026-10-22T22:05:14+05:30)
+
+* New **Start files** check (run by hand only): downloads the repository as a ZIP, runs the start file on Windows, macOS and Linux, and checks the app starts, finds Chrome and Firefox profiles, and quits. New `test/start-check.js`.
+* README: disk space needed (about 450 MB, about 770 MB with Firefox) and the **Open Anyway** step for newer macOS versions.
+
 ## 0.2.0 (2026-10-22T21:45:34+05:30)
 
 ### Firefox and more browsers

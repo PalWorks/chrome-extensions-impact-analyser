@@ -1,0 +1,83 @@
+name: Start files
+
+# Downloads the repository as a ZIP, the way a user does, unzips it with the system's own tool,
+# runs the start file for each system, and checks the app comes up, finds Chrome and Firefox
+# profiles, and quits. Runs only when started by hand, to keep GitHub Actions use to a minimum.
+on:
+  workflow_dispatch:
+
+jobs:
+  start:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Download and unzip the repository (as a user would)
+        shell: bash
+        run: |
+          curl -sSL -o app.zip "https://github.com/${{ github.repository }}/archive/${{ github.sha }}.zip"
+          case "${{ runner.os }}" in
+            macOS) ditto -x -k app.zip unzipped ;;
+            Windows) pwsh -NoProfile -Command "Expand-Archive -Path app.zip -DestinationPath unzipped" ;;
+            *) unzip -q app.zip -d unzipped ;;
+          esac
+          echo "APP_DIR=$(ls -d "$PWD"/unzipped/*/ | head -1)" >> "$GITHUB_ENV"
+
+      - name: The macOS start file can still be run after unzipping
+        if: runner.os == 'macOS'
+        shell: bash
+        run: test -x "$APP_DIR/start-macos.command" && echo "start-macos.command is executable"
+
+      - name: Create a Chrome and a Firefox profile in their usual places
+        shell: bash
+        run: |
+          case "${{ runner.os }}" in
+            Windows)
+              CHROME="/c/Program Files/Google/Chrome/Application/chrome.exe"
+              CHROME_DATA="$LOCALAPPDATA/Google/Chrome/User Data"
+              FIREFOX="/c/Program Files/Mozilla Firefox/firefox.exe" ;;
+            macOS)
+              CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+              CHROME_DATA="$HOME/Library/Application Support/Google/Chrome"
+              FIREFOX="/Applications/Firefox.app/Contents/MacOS/firefox" ;;
+            *)
+              CHROME="$(command -v google-chrome)"
+              CHROME_DATA="$HOME/.config/google-chrome"
+              FIREFOX="$(command -v firefox)" ;;
+          esac
+          "$CHROME" --headless --no-first-run --user-data-dir="$CHROME_DATA" --dump-dom about:blank > /dev/null
+          "$FIREFOX" -headless -CreateProfile ci-test
+          ls "$CHROME_DATA"
+
+      - name: Start the app with the Windows start file and check it
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Start-Process -FilePath cmd.exe -ArgumentList '/c', 'start-windows.bat --no-open --port=4777 > ..\start.log 2>&1' -WorkingDirectory $env:APP_DIR -NoNewWindow
+          node "$env:APP_DIR\test\start-check.js" --port=4777 --expect="Google Chrome,Firefox"
+
+      - name: Start the app with the macOS start file and check it
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          ( cd "$APP_DIR" && ./start-macos.command --no-open --port=4777 > ../start.log 2>&1 < /dev/null & )
+          node "$APP_DIR/test/start-check.js" --port=4777 --expect="Google Chrome,Firefox"
+
+      - name: Start the app with the Linux start file and check it
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          ( cd "$APP_DIR" && ./start-linux.sh --no-open --port=4777 > ../start.log 2>&1 < /dev/null & )
+          node "$APP_DIR/test/start-check.js" --port=4777 --expect="Google Chrome,Firefox"
+
+      - name: Show what the start file printed
+        if: always()
+        shell: bash
+        run: cat unzipped/start.log || true
