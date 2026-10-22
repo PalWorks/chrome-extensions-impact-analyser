@@ -5,13 +5,17 @@ name: Start files
 # profiles, and quits. Runs only when started by hand, to keep GitHub Actions use to a minimum.
 on:
   workflow_dispatch:
+    inputs:
+      systems:
+        description: 'Systems to check, as a JSON list'
+        default: '["windows-latest", "macos-latest", "ubuntu-latest"]'
 
 jobs:
   start:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: ${{ fromJSON(inputs.systems) }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
@@ -28,7 +32,10 @@ jobs:
             Windows) pwsh -NoProfile -Command "Expand-Archive -Path app.zip -DestinationPath unzipped" ;;
             *) unzip -q app.zip -d unzipped ;;
           esac
-          echo "APP_DIR=$(ls -d "$PWD"/unzipped/*/ | head -1)" >> "$GITHUB_ENV"
+          APP_DIR="$(ls -d "$PWD"/unzipped/*/ | head -1)"
+          # PowerShell needs a Windows-style path.
+          if [ "${{ runner.os }}" = Windows ]; then APP_DIR="$(cygpath -w "$APP_DIR")"; fi
+          echo "APP_DIR=$APP_DIR" >> "$GITHUB_ENV"
 
       - name: The macOS start file can still be run after unzipping
         if: runner.os == 'macOS'
