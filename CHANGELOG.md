@@ -2,6 +2,7 @@
 
 ## Unreleased (2026-10-21T17:37:59+05:30)
 
+* Reports button in the report's bar (2026-10-22T21:35:28+05:30): opens Past reports in the app. Shown only when the report is opened from the app.
 * Past reports is now a table (2026-10-22T21:24:41+05:30): date and time, profile and browser, scope (extensions, websites, rounds), findings as verdict badges with the summary, then Open report and a files button. Sort by date, scope or findings; rows become cards on phones. The Reports button stays highlighted on that page.
 * New icon for **Ask** (2026-10-22T21:11:46+05:30): "AI" in an open frame with two sparkles, drawn as a scalable icon that follows the light and dark themes.
 * App home page redesign (2026-10-22T20:54:07+05:30): frozen app bar with icon, tagline, Reports button and Auto/Light/Dark switch (labels under icons on phones, compact once scrolled); welcome strip on the first step; numbered, named steps; coloured browser and profile marks; icons on the thoroughness choices; larger progress on the test screen; verdict colour strip on result cards; footer with PalWorks credit, source code, problem reporting and licence links, then version and Quit.

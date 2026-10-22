@@ -856,7 +856,10 @@ quit.addEventListener('click', async () => {
   const remembered = all.find(x => x.p.path === store.get('profile', '')) || (all.length === 1 ? all[0] : null);
   if (remembered) setProfile(remembered.g, remembered.p);
 
-  go(S.init.state.running ? 'run' : 'profile', {replace: true});
+  // Reports link here with #past to open the list of past reports.
+  const wantPast = location.hash === '#past';
+  if (wantPast) history.replaceState(null, '', '/');
+  go(S.init.state.running ? 'run' : wantPast ? 'past' : 'profile', {replace: true});
   if (S.init.state.running) {
     S.run = {phase: S.init.state.phase, progress: S.init.state.progress, logs: S.init.state.logs};
     updateRun();

@@ -15,6 +15,7 @@ const esc = value =>
   String(value ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
 
 const ICON = {
+  reports: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 17v-3M12 17v-6M15 17v-4"/></svg>',
   retest: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>',
   search: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
   // "AI" in an open frame with two sparkles, redrawn as an SVG after the user's chosen icon.
@@ -125,7 +126,7 @@ html{scroll-padding-top:110px}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-text)}
 .btn.danger{color:var(--heavy)}
 .btn:disabled{opacity:.6;cursor:default}
-.icon{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit;cursor:pointer}
+.icon{text-decoration:none;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit;cursor:pointer}
 .icon svg{width:20px;height:20px;flex:none}
 .icon .lbl{display:none}
 .icon:hover{border-color:var(--muted)}
@@ -239,7 +240,7 @@ footer a{color:var(--muted);font-weight:600}
 @media (max-width:720px){
   h1{font-size:1.25rem}
   .brand{flex-basis:100%}
-  .tools{width:100%;display:grid;grid-template-columns:repeat(var(--tools,7),1fr);gap:4px}
+  .tools{width:100%;display:grid;grid-template-columns:repeat(var(--tools,8),1fr);gap:4px}
   .tools .seg{grid-column:span 3;display:grid;grid-template-columns:repeat(3,1fr)}
   .appbar-inner{padding-block:8px}
   .appbar.scrolled .appbar-inner{flex-wrap:nowrap}
@@ -247,7 +248,7 @@ footer a{color:var(--muted);font-weight:600}
   .appbar.scrolled .brand-text{display:none}
   .appbar.scrolled .tools{width:auto;flex:1}
   .icon{width:100%;height:auto;min-height:52px;padding:6px 2px}
-  .icon .lbl{display:block;font-size:.66rem;font-weight:600;line-height:1}
+  .icon .lbl{display:block;font-size:.62rem;font-weight:600;line-height:1;white-space:nowrap}
   .menu>summary.icon{width:100%}
   .menu .panel{right:0;left:auto;width:min(320px,calc(100vw - 32px))}
   .controls{position:static}
@@ -289,6 +290,7 @@ footer a{color:var(--muted);font-weight:600}
     <span class="brand-text"><b>Chrome Firefox Browser Extensions Impact Analyser</b><small>Report of ${esc(when.toLocaleString('en-GB', {dateStyle: 'medium', timeStyle: 'short'}))}</small></span>
   </${appToken ? 'a' : 'span'}>
   <div class="tools" id="tools">
+    <a class="icon" href="/#past" data-app aria-label="Past reports" title="Past reports">${ICON.reports}<span class="lbl" aria-hidden="true">Reports</span></a>
     ${iconButton('id="retest" data-app aria-expanded="false" aria-controls="confirm"', ICON.retest, 'Run this test again', 'Re-test')}
     ${iconButton('id="search-toggle" aria-expanded="false" aria-controls="search-row"', ICON.search, 'Search', 'Search')}
     ${iconButton('id="ask-toggle" data-app aria-expanded="false" aria-controls="ask"', ICON.ask, 'Ask about this report', 'Ask')}

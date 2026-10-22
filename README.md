@@ -50,6 +50,7 @@ The bar at the top stays on screen while you scroll, as it does in the app. Its 
 
 | Button | What it does |
 |---|---|
+| Reports | Opens the list of past reports in the app. |
 | Re-test | Runs the same test again. It first shows how long it takes and that your computer will be busy, then asks once more before starting. If a test is already running, it says so instead. |
 | Search | Opens a search box that filters extensions and websites. |
 | Ask | Opens the AI assistant (see below). |
