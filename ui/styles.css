@@ -194,3 +194,4 @@ input[aria-invalid=true] { border-color: var(--danger); }
   .actions.three { flex-wrap: wrap; }
   .actions.three .btn.primary { flex-basis: 100%; order: -1; }
 }
+.foot a { color: var(--muted); font-weight: 600; }

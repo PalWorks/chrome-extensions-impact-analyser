@@ -6,7 +6,7 @@ Chrome Firefox Browser Extensions Impact Analyser copies the extensions from you
 
 Your own browser, profile and data are never changed.
 
-Last updated: 2026-10-21T21:17:28+05:30
+Last updated: 2026-10-22T12:58:29+05:30
 
 ## What you get
 
@@ -42,6 +42,36 @@ A terminal window opens, and then the app opens in your web browser. Keep the te
 
 Past reports stay in the `results` folder and under **Past reports** in the app.
 
+## The report
+
+The buttons at the top of the report, from left to right:
+
+| Button | What it does |
+|---|---|
+| Re-test | Runs the same test again. It first shows how long it takes and that your computer will be busy, then asks once more before starting. If a test is already running, it says so instead. |
+| Search | Opens a search box that filters extensions and websites. |
+| Ask | Opens the AI assistant (see below). |
+| Auto, Light, Dark | Colour theme. Auto follows your device. |
+| Save | Downloads the report as PDF, image (PNG), Word (.docx, which Google Docs also opens) or Markdown. PDF and Word pages are numbered "Page X of Y". |
+
+In the results table:
+
+* Click a column name to sort. On a phone, use **Sort by**.
+* Use the chips to show only one verdict, for example **Heavy impact**.
+* Tick the extensions you would keep. The **Total** row at the top adds up their effects and gives an estimated verdict. Adding up is only an estimate, so the row also offers **Test these together**, which runs a real test of just those extensions.
+* Click an extension's name to jump to its numbers for each website.
+
+A report opened straight from the `results` folder still sorts, filters, searches and saves as Markdown or (through the print window) PDF. Re-test, the AI assistant, and image and Word downloads need the app running: open the report from **Past reports** in the app.
+
+## AI assistant (optional)
+
+**Ask** lets you ask questions such as "What if I keep only Bitwarden and Ghostery?" or "Is this slow on every website?". The assistant reads the results, adds up effects, and can suggest a new test. A suggested test only runs if you press its button and confirm; the assistant then explains the new results.
+
+You need a key from an AI service. The form fills in the endpoint and model for Anthropic, OpenAI, Google Gemini, DeepSeek, Alibaba Qwen, Zhipu GLM and Moonshot Kimi, and accepts any other OpenAI-compatible service, including a local one such as Ollama. Every field can be edited, because services rename their models from time to time. The key is checked with a short test message before it is saved.
+
+* The key is saved only on this computer, in `.local/ai.json` inside this folder (readable only by you on macOS and Linux). **Remove saved key** deletes it.
+* When you ask a question, your question and a summary of the results are sent to the service you chose. Nothing is sent anywhere until you connect a service and ask.
+
 ## How it measures
 
 * Every setup runs in its own clean copy of **Chrome for Testing** (or of **Firefox**, for a Firefox profile). Your everyday browser is not used.
@@ -73,7 +103,7 @@ These thresholds are a judgement call, not an industry standard. They live in `s
 
 ## Privacy
 
-Everything runs on your computer. The app listens only on `127.0.0.1` and needs a secret token that only its own page knows. The only network traffic is the test browser loading the websites you choose, plus whatever the tested extensions do themselves. There is no telemetry.
+Everything runs on your computer. The app listens only on `127.0.0.1` and needs a secret token that only its own page knows. The only network traffic is the test browser loading the websites you choose, plus whatever the tested extensions do themselves, plus the AI service if you choose to use the assistant. There is no telemetry.
 
 ## Command line
 
@@ -90,9 +120,10 @@ node src/cli.js --help
 ```
 npm run self-test
 npm run self-test:firefox
+npm run test:ai
 ```
 
-The first checks Chrome, the second Firefox (its first run downloads Firefox; after that no internet is needed). Each tests two built-in test extensions against a local page. One burns about 300 ms of CPU on every page and must come out as **Heavy impact**. The other does nothing and must come out as **No clear impact**.
+The first checks Chrome, the second Firefox (its first run downloads Firefox; after that no internet is needed). Each tests two built-in test extensions against a local page. One burns about 300 ms of CPU on every page and must come out as **Heavy impact**. The other does nothing and must come out as **No clear impact**. The Chrome self-test also checks the PDF, image and Word downloads. `test:ai` checks the AI assistant against a pretend AI service, with no key or internet needed.
 
 ## Troubleshooting
 
@@ -106,7 +137,7 @@ The first checks Chrome, the second Firefox (its first run downloads Firefox; af
 
 ## Uninstall
 
-Delete this folder. Nothing is installed anywhere else, apart from Node.js itself.
+Delete this folder. Nothing is installed anywhere else, apart from Node.js itself. That also deletes any saved AI key.
 
 ## Related work
 
@@ -116,3 +147,5 @@ https://www.debugbear.com/blog/chrome-extensions-website-performance
 ## License
 
 MIT. See `LICENSE`.
+
+Made by PalWorks: https://palworks.ai

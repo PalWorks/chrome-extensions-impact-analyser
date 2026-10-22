@@ -12,6 +12,7 @@ import {fileURLToPath} from 'node:url';
 import {runBenchmark} from '../src/engine.js';
 import {analyze} from '../src/analyze.js';
 import {writeReport} from '../src/report.js';
+import {renderPdf, renderPng, renderDocx} from '../src/export.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixtures = path.join(here, 'fixtures');
@@ -66,6 +67,14 @@ try {
   expect(extra > 250 && extra < 450, `busy extension adds about 300 ms of work (measured ${Math.round(extra)} ms)`);
   expect(idle?.verdict === 'none', `idle extension verdict is "No clear impact" (got "${idle?.verdictLabel}")`);
   expect(data.analysis.combined?.verdict === 'heavy', 'both together are "Heavy impact"');
+
+  // The report's downloads: PDF and image come from the HTML report, Word from the data.
+  const pdf = await renderPdf(report);
+  expect(pdf.subarray(0, 4).toString() === '%PDF' && pdf.length > 10_000, `PDF download works (${Math.round(pdf.length / 1024)} KB)`);
+  const png = await renderPng(report, 'dark');
+  expect(png.subarray(1, 4).toString() === 'PNG' && png.length > 10_000, `image download works (${Math.round(png.length / 1024)} KB)`);
+  const docx = await renderDocx(data);
+  expect(docx.subarray(0, 2).toString() === 'PK' && docx.length > 5_000, `Word download works (${Math.round(docx.length / 1024)} KB)`);
   console.log(`\nReport: ${report}`);
 } finally {
   server.close();

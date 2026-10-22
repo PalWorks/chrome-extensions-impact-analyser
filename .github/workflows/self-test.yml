@@ -21,5 +21,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - run: npm run test:ai
       - run: npm run self-test
       - run: npm run self-test:firefox

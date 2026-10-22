@@ -15,10 +15,12 @@
     "start": "node src/server.js",
     "cli": "node src/cli.js",
     "self-test": "node test/self-test.js",
-    "self-test:firefox": "node test/self-test.js --firefox"
+    "self-test:firefox": "node test/self-test.js --firefox",
+    "test:ai": "node test/ai-test.js"
   },
   "dependencies": {
     "@puppeteer/browsers": "3.2.3",
+    "docx": "9.9.0",
     "puppeteer": "25.12.0"
   }
 }

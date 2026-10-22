@@ -12,11 +12,15 @@ import puppeteer from 'puppeteer';
 import {detectBrowsers, listExtensions, describeExtensionFolder, resolveCustomFolder, isExtensionSource} from './sources.js';
 import {runBenchmark, normalizeSettings, normalizeUrl, estimateSeconds, CancelledError, DEFAULT_SETTINGS, LIMITS} from './engine.js';
 import {analyze} from './analyze.js';
-import {writeReport, resultFolderName} from './report.js';
+import {writeReport, resultFolderName, renderHtml} from './report.js';
+import {renderPdf, renderPng, renderDocx, exportFileName} from './export.js';
+import {createStore, publicConfig, normalizeConfig, testConnection, ask as askAi} from './ai.js';
+import os from 'node:os';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const uiDir = path.join(root, 'ui');
 const resultsDir = path.join(root, 'results');
+const aiStore = createStore(path.join(root, '.local'));
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const token = crypto.randomBytes(24).toString('hex');
 const args = process.argv.slice(2);
@@ -113,6 +117,31 @@ function summaryFor(id, data) {
     rounds: data.settings.rounds,
     engine: data.engine || 'chrome',
   };
+}
+
+function readRun(id) {
+  if (!/^[\w-]+$/.test(String(id || ''))) return null;
+  try {
+    return JSON.parse(fs.readFileSync(path.join(resultsDir, id, 'results.json'), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+// Builds a new run from a saved one: the same setup, or only some of its extensions, other
+// websites or another number of rounds.
+function rerunBody(body) {
+  const data = readRun(body.id);
+  if (!data) throw Object.assign(new Error('That report was not found. Open it again from Past reports.'), {status: 404});
+  const keys = Array.isArray(body.extensionKeys) && body.extensionKeys.length ? new Set(body.extensionKeys.map(String)) : null;
+  const extensions = data.extensions
+    .filter(e => !keys || keys.has(e.key))
+    .map(e => ({id: e.id, name: e.name, version: e.version, path: e.sourcePath}));
+  const missing = extensions.filter(e => !isExtensionSource(e.path));
+  if (missing.length) throw Object.assign(new Error(`${missing.map(e => `"${e.name}"`).join(', ')} is no longer in your browser profile, so it cannot be tested again.`), {status: 400});
+  const urls = Array.isArray(body.urls) && body.urls.length ? body.urls : data.urls;
+  const rounds = [3, 5, 9].includes(Number(body.rounds)) ? Number(body.rounds) : data.settings.rounds;
+  return {urls, extensions, engine: data.engine, settings: {...data.settings, rounds}, source: data.source};
 }
 
 async function startRun(body) {
@@ -212,7 +241,37 @@ async function handle(req, res) {
     const file = path.join(uiDir, p === '/favicon.ico' ? 'icon.svg' : p.slice(1));
     return send(res, 200, fs.readFileSync(file), MIME[path.extname(file)]);
   }
+  const exported = p.match(/^\/reports\/([\w-]+)\/report\.(pdf|png|docx)$/);
+  if (req.method === 'GET' && exported) {
+    if ((req.headers['x-token'] || url.searchParams.get('token')) !== token) return send(res, 403, {error: 'This page is out of date. Reload it.'});
+    const data = readRun(exported[1]);
+    if (!data) return send(res, 404, {error: 'That report was not found.'});
+    const kind = exported[2];
+    let buffer;
+    if (kind === 'docx') {
+      buffer = await renderDocx(data);
+    } else {
+      // Render the report without the app token into a private temporary file, then print it.
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'extension-impact-export-'));
+      try {
+        const file = path.join(tmp, 'report.html');
+        fs.writeFileSync(file, renderHtml(data));
+        buffer = kind === 'pdf' ? await renderPdf(file) : await renderPng(file, url.searchParams.get('theme'));
+      } finally {
+        fs.rmSync(tmp, {recursive: true, force: true});
+      }
+    }
+    const types = {pdf: 'application/pdf', png: 'image/png', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'};
+    res.writeHead(200, {'content-type': types[kind], 'content-disposition': `attachment; filename="${exportFileName(data, kind)}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff'});
+    return res.end(buffer);
+  }
   const report = p.match(/^\/reports\/([\w-]+)\/(report\.html|results\.csv|results\.json)$/);
+  if (req.method === 'GET' && report && report[2] === 'report.html') {
+    // Reports are drawn fresh from their data, so older reports get the current design and
+    // the page gets the token it needs for re-tests, downloads and the assistant.
+    const data = readRun(report[1]);
+    if (data?.analysis) return send(res, 200, renderHtml(data, {appToken: token, reportId: report[1]}), MIME['.html']);
+  }
   if (req.method === 'GET' && report) {
     const file = path.join(resultsDir, report[1], report[2]);
     if (!fs.existsSync(file)) return send(res, 404, 'Not found', 'text/plain');
@@ -234,6 +293,8 @@ async function handle(req, res) {
     });
     return;
   }
+
+  if (req.method === 'GET' && p === '/api/ai/config') return send(res, 200, publicConfig(aiStore.load()));
 
   if (req.method === 'GET' && p === '/api/init') {
     return send(res, 200, {
@@ -271,6 +332,35 @@ async function handle(req, res) {
     case '/api/run':
       if (state.running) return send(res, 409, {error: 'A test is already running.'});
       return send(res, 200, await startRun(body));
+    case '/api/rerun':
+      if (state.running) return send(res, 409, {error: 'A test is already running. Wait for it to finish, or stop it first.'});
+      return send(res, 200, await startRun(rerunBody(body)));
+    case '/api/ai/config': {
+      const {config, error} = normalizeConfig(body);
+      if (error) return send(res, 400, {error});
+      await testConnection(config).catch(err => {
+        throw Object.assign(new Error(err.message), {status: 400});
+      });
+      aiStore.save(config);
+      return send(res, 200, publicConfig(config));
+    }
+    case '/api/ai/forget':
+      aiStore.forget();
+      return send(res, 200, publicConfig(null));
+    case '/api/ai/ask': {
+      const config = aiStore.load();
+      if (!config) return send(res, 400, {error: 'Connect an AI service first.'});
+      const data = readRun(body.id);
+      if (!data) return send(res, 404, {error: 'That report was not found.'});
+      const question = String(body.question || '').trim();
+      if (!question) return send(res, 400, {error: 'Type a question first.'});
+      const history = Array.isArray(body.history) ? body.history : [];
+      try {
+        return send(res, 200, await askAi({config, data, question, history}));
+      } catch (err) {
+        return send(res, 502, {error: err.message});
+      }
+    }
     case '/api/cancel':
       controller?.abort();
       return send(res, 200, {ok: true});
