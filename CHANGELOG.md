@@ -3,6 +3,8 @@
 ## Unreleased (2026-10-22T22:05:14+05:30)
 
 * New **Start files** check (run by hand only): downloads the repository as a ZIP, runs the start file on Windows, macOS and Linux, and checks the app starts, finds Chrome and Firefox profiles, and quits. New `test/start-check.js`.
+* Documentation set for people and AI agents (2026-10-22T22:16:52+05:30): README restructured (contents, features, quick start, configuration, architecture, project structure, testing, releases); new `AGENTS.md` (with `CLAUDE.md` pointing to it), `CONTRIBUTING.md` (workflow, review checklist, release and rollback steps), `SECURITY.md`, and `docs/` with ARCHITECTURE, DECISIONS, DOMAIN, API, TESTING, LIMITATIONS and ROADMAP. Private vulnerability reporting turned on for the repository.
+* The **Start files** check can be limited to chosen systems when started.
 * README: disk space needed (about 450 MB, about 770 MB with Firefox) and the **Open Anyway** step for newer macOS versions.
 
 ## 0.2.0 (2026-10-22T21:45:34+05:30)
