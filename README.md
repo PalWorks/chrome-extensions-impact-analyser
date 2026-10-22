@@ -6,13 +6,15 @@ Chrome Firefox Browser Extensions Impact Analyser copies the extensions from you
 
 Your own browser, profile and data are never changed.
 
-Last updated: 2026-10-22T21:41:19+05:30
+Last updated: 2026-10-22T21:45:34+05:30
 
 ## What you get
 
 * A verdict for each extension: **Heavy impact**, **Noticeable impact**, **Small impact**, **No clear impact** or **Makes pages faster**.
 * A plain sentence for each, for example: "Adds about 310 ms of work to every page, makes pages finish loading 0.4 s later and uses about 25 MB of memory."
-* A full report (`report.html`) with per-website details, plus `results.csv` (every page load) and `results.json` (everything).
+* A full report (`report.html`) with per-website details that you can sort, filter, search and download as PDF, image, Word or Markdown, plus `results.csv` (every page load) and `results.json` (everything).
+* A **Total** row that estimates the effect of keeping only some extensions, and one-click re-tests to check it for real.
+* An optional AI assistant that answers questions about your results, using your own key for an AI service.
 
 ## Before you start
 
@@ -22,7 +24,7 @@ The first start downloads about 200 MB (the test browser and one library). The f
 
 ## Start it
 
-Download this repository (green **Code** button, then **Download ZIP**) and unzip it. Then:
+Download the latest version from the **Releases** page (https://github.com/PalWorks/chrome-firefox-browser-extensions-impact-analyser/releases, choose **Source code (zip)**), or use the green **Code** button, then **Download ZIP**. Unzip it. Then:
 
 | System | What to do |
 |---|---|
@@ -30,7 +32,7 @@ Download this repository (green **Code** button, then **Download ZIP**) and unzi
 | macOS | Double-click `start-macos.command`. The first time, macOS may block it: right-click the file, choose **Open**, then **Open** again. |
 | Linux | Open a terminal in the folder and run `./start-linux.sh`. |
 
-A terminal window opens, and then the app opens in your web browser. Keep the terminal window open while you use the app. To stop, click **Quit Chrome Firefox Browser Extensions Impact Analyser** at the bottom of the page or close the terminal window.
+A terminal window opens, and then the app opens in your web browser. Keep the terminal window open while you use the app. To stop, click **Quit the app** at the bottom of the page or close the terminal window.
 
 ## Use it
 
@@ -42,7 +44,7 @@ The bar at the top of the app stays on screen. **Reports** opens your past repor
 4. **Wait.** You can keep using your computer, but heavy work such as video calls makes results less precise.
 5. **Read the results**, then open the full report.
 
-Past reports stay in the `results` folder and under **Past reports** in the app.
+Past reports stay in the `results` folder. **Reports** in the app lists them in a table (date, profile, scope and findings) that you can sort.
 
 ## The report
 
@@ -64,7 +66,7 @@ In the results table:
 * Tick the extensions you would keep. The **Total** row at the top adds up their effects and gives an estimated verdict. Adding up is only an estimate, so the row also offers **Test these together**, which runs a real test of just those extensions.
 * Click an extension's name to jump to its numbers for each website.
 
-A report opened straight from the `results` folder still sorts, filters, searches and saves as Markdown or (through the print window) PDF. Re-test, the AI assistant, and image and Word downloads need the app running: open the report from **Past reports** in the app.
+A report opened straight from the `results` folder still sorts, filters, searches and saves as Markdown or (through the print window) PDF. Re-test, the AI assistant, and image and Word downloads need the app running: open the report from **Reports** in the app.
 
 ## AI assistant (optional)
 
@@ -128,7 +130,24 @@ npm run test:ai
 
 The first checks Chrome, the second Firefox (its first run downloads Firefox; after that no internet is needed). Each tests two built-in test extensions against a local page. One burns about 300 ms of CPU on every page and must come out as **Heavy impact**. The other does nothing and must come out as **No clear impact**. The Chrome self-test also checks the PDF, image and Word downloads. `test:ai` checks the AI assistant against a pretend AI service, with no key or internet needed.
 
-For contributors: the same checks run on Windows, macOS and Linux in GitHub Actions, but only when started by hand from the Actions tab or when a release tag (for example `v0.2.0`) is pushed.
+The same checks run on Windows, macOS and Linux in GitHub Actions, but only when started by hand from the Actions tab or when a release tag (for example `v0.2.0`) is pushed.
+
+## For contributors
+
+| Path | What it holds |
+|---|---|
+| `src/server.js` | Local web server for the app, reports, downloads, re-tests and the AI assistant |
+| `src/engine.js` | Runs the tests in Chrome for Testing or Firefox and records every page load |
+| `src/analyze.js` | Turns page loads into medians, noise limits and verdicts |
+| `src/report.js` | The HTML report (with its page script), CSV and JSON |
+| `src/export.js` | PDF, PNG and Word downloads |
+| `src/ai.js` | The AI assistant: providers, saved key, tools |
+| `src/sources.js` | Finds browser profiles and reads their extensions |
+| `src/cli.js` | Command-line version |
+| `ui/` | The app's pages (plain HTML, CSS and JavaScript, no build step) |
+| `test/` | Self-test, AI test and test extensions |
+
+Run `npm run test:ai` and `npm run self-test` before sending a change.
 
 ## Troubleshooting
 
@@ -139,6 +158,8 @@ For contributors: the same checks run on Windows, macOS and Linux in GitHub Acti
 | A website shows an error or never loads | Some sites block automated visits. Pick a different site. |
 | Linux: warning that the sandbox is off | Your system blocks Chrome's sandbox for non-installed browsers. The test still runs; this only affects the test browser. |
 | The page says it is out of date | The app was restarted. Reload the page. |
+| The AI assistant says the key was refused, or the model was not found | Check the key belongs to the service you chose. Services rename models; open **Change AI service** and type the current model name from the service's own documentation. |
+| The first Firefox test stops while downloading Firefox | Check your internet connection and start the test again. The download continues from scratch and happens only once. |
 
 ## Uninstall
 

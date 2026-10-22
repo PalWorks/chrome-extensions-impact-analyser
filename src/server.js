@@ -135,7 +135,7 @@ function readRun(id) {
 // websites or another number of rounds.
 function rerunBody(body) {
   const data = readRun(body.id);
-  if (!data) throw Object.assign(new Error('That report was not found. Open it again from Past reports.'), {status: 404});
+  if (!data) throw Object.assign(new Error('That report was not found. Open it again from Reports in the app.'), {status: 404});
   const keys = Array.isArray(body.extensionKeys) && body.extensionKeys.length ? new Set(body.extensionKeys.map(String)) : null;
   const extensions = data.extensions
     .filter(e => !keys || keys.has(e.key))
