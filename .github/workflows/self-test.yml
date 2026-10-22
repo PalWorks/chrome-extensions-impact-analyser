@@ -1,10 +1,16 @@
 name: Self-test
 
+# Runs only when started by hand (Actions tab, or `gh workflow run self-test.yml`) or when a
+# release tag such as v0.2.0 is pushed, to keep GitHub Actions use to a minimum. Day-to-day
+# changes are checked locally with `npm run test:ai && npm run self-test`.
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: self-test-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   self-test:

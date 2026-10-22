@@ -2,6 +2,7 @@
 
 ## Unreleased (2026-10-21T17:37:59+05:30)
 
+* GitHub Actions kept to a minimum (2026-10-22T21:41:19+05:30): the three-system self-test now runs only when started by hand or for a release tag, not on every push.
 * Reports button in the report's bar (2026-10-22T21:35:28+05:30): opens Past reports in the app. Shown only when the report is opened from the app.
 * Past reports is now a table (2026-10-22T21:24:41+05:30): date and time, profile and browser, scope (extensions, websites, rounds), findings as verdict badges with the summary, then Open report and a files button. Sort by date, scope or findings; rows become cards on phones. The Reports button stays highlighted on that page.
 * New icon for **Ask** (2026-10-22T21:11:46+05:30): "AI" in an open frame with two sparkles, drawn as a scalable icon that follows the light and dark themes.

@@ -6,7 +6,7 @@ Chrome Firefox Browser Extensions Impact Analyser copies the extensions from you
 
 Your own browser, profile and data are never changed.
 
-Last updated: 2026-10-22T20:54:07+05:30
+Last updated: 2026-10-22T21:41:19+05:30
 
 ## What you get
 
@@ -127,6 +127,8 @@ npm run test:ai
 ```
 
 The first checks Chrome, the second Firefox (its first run downloads Firefox; after that no internet is needed). Each tests two built-in test extensions against a local page. One burns about 300 ms of CPU on every page and must come out as **Heavy impact**. The other does nothing and must come out as **No clear impact**. The Chrome self-test also checks the PDF, image and Word downloads. `test:ai` checks the AI assistant against a pretend AI service, with no key or internet needed.
+
+For contributors: the same checks run on Windows, macOS and Linux in GitHub Actions, but only when started by hand from the Actions tab or when a release tag (for example `v0.2.0`) is pushed.
 
 ## Troubleshooting
 
